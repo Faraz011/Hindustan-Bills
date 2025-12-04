@@ -6,7 +6,7 @@ import app from "./src/app.js";
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/hindustan-bills";
+const MONGO_URI = process.env.MONGO_URI ;
 
 const startServer = async () => {
   try {
