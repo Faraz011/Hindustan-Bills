@@ -1,54 +1,28 @@
-// backend/src/utils/emailService.js
-// Safe Resend wrapper — won't crash if RESEND_API_KEY is missing.
-import dotenv from "dotenv";
-dotenv.config();
-
-let resendClient = null;
-
-async function initResend() {
-  try {
-    // dynamic import so this module doesn't throw on import time when key missing
-    const { default: Resend } = await import("resend");
-    if (process.env.RESEND_API_KEY) {
-      resendClient = new Resend(process.env.RESEND_API_KEY);
-      console.log("✅ Resend initialized");
-    } else {
-      console.warn("⚠️ RESEND_API_KEY not set — email sending is disabled (fallback mode).");
-    }
-  } catch (err) {
-    console.warn("⚠️ Resend import failed — email sending disabled. Error:", err && err.message ? err.message : err);
-  }
-}
-
-// initialize asynchronously (does not block module import)
-initResend();
+// add this near the bottom of backend/src/utils/emailService.js
 
 /**
- * sendEmail({ to, subject, html, text })
- * - If RESEND_API_KEY is present, sends using Resend.
- * - If not present, logs a fallback message and returns a mock response so callers don't crash.
+ * sendInvoiceEmail(invoiceData)
+ * Small wrapper used by paymentController (so import('sendInvoiceEmail') works).
+ * Adapt the template/fields to match what paymentController expects.
+ *
+ * invoiceData example:
+ *   { to, invoiceNumber, amount, htmlBody, textBody }
  */
-export async function sendEmail({ to, subject, html, text }) {
-  if (!resendClient) {
-    console.log(`[mail-fallback] to=${to} subject=${subject}`);
-    return { ok: true, mocked: true };
-  }
+export async function sendInvoiceEmail(invoiceData = {}) {
+  const { to, invoiceNumber, amount, htmlBody, textBody } = invoiceData;
 
-  try {
-    const resp = await resendClient.emails.send({
-      from: process.env.EMAIL_FROM || "no-reply@example.com",
-      to,
-      subject,
-      html,
-      text,
-    });
-    return resp;
-  } catch (err) {
-    console.error("Failed to send email via Resend:", err);
-    throw err;
-  }
-}
+  // If htmlBody/textBody provided by caller, use them, otherwise build a small default template
+  const html = htmlBody || `<p>Hi,</p>
+    <p>Your invoice <strong>#${invoiceNumber}</strong> for ₹${amount} is attached/available.</p>
+    <p>Thanks,<br/>Hindustan Bills</p>`;
 
-export function isEmailEnabled() {
-  return !!resendClient;
+  const text = textBody || `Hi,\nYour invoice #${invoiceNumber} for ₹${amount} is available.\n\nThanks,\nHindustan Bills`;
+
+  // call the generic sendEmail so the logic stays in one place
+  return await sendEmail({
+    to,
+    subject: `Your invoice #${invoiceNumber}`,
+    html,
+    text,
+  });
 }
