@@ -18,18 +18,25 @@ api.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
     }
+
+    // prevent caching on important requests
+    if (config.method === 'post' && config.headers) {
+      config.headers['Cache-Control'] = 'no-cache'
+      config.headers['Pragma'] = 'no-cache'
+    }
+
+
     return config
   },
   (error) => Promise.reject(error)
 )
 
-// Global response interceptor (optional but helpful)
+// Global response interceptor
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Handle expired token, unauthorized, etc.
     if (error.response && error.response.status === 401) {
-      console.warn('Unauthorized — possible invalid or expired token.')
+      console.warn('Unauthorized — invalid or expired token.')
       localStorage.removeItem('hb_token')
       window.location.href = '/login'
     }

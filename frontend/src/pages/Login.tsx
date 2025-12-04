@@ -4,10 +4,16 @@ import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react'
 import toast from 'react-hot-toast'
+import api from '../api/axios'
 
 interface LoginForm {
   email: string
   password: string
+}
+
+interface LoginResponse {
+  token?: string
+  message?: string
 }
 
 const Login = () => {
@@ -22,15 +28,46 @@ const Login = () => {
   } = useForm<LoginForm>()
 
   const onSubmit = async (data: LoginForm) => {
-    console.log("Login form data:", data)
+    console.log('Login form data:', data)
     setIsLoading(true)
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      toast.success('Login successful!')
-      navigate('/')
-    } catch (error) {
-      toast.error('Login failed. Please try again.')
+      // Use Axios generic typing instead of importing AxiosResponse
+      const res = await api.post<LoginResponse>('/auth/login', {
+        email: data.email,
+        password: data.password
+      })
+
+      const resData = res && res.data ? res.data : ({} as LoginResponse)
+
+      if (resData.token && typeof resData.token === 'string' && resData.token.length > 0) {
+        localStorage.setItem('hb_token', resData.token)
+        toast.success('Login successful!')
+        navigate('/')
+      } else {
+        const msg = resData.message && typeof resData.message === 'string' && resData.message.length > 0
+          ? resData.message
+          : 'Invalid email or password'
+        toast.error(msg)
+      }
+    } catch (err: any) {
+      let msg = 'Invalid email or password'
+
+      if (err) {
+        if (err.response && err.response.data) {
+          const d = err.response.data
+          if (d.message && typeof d.message === 'string') {
+            msg = d.message
+          } else if (typeof d === 'string') {
+            msg = d
+          }
+        } else if (err.message && typeof err.message === 'string') {
+          msg = err.message
+        }
+      }
+
+      console.error('Login error:', msg)
+      toast.error(msg)
     } finally {
       setIsLoading(false)
     }
@@ -38,6 +75,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 relative overflow-hidden">
+
       {/* Background Lines */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-20 left-10 text-6xl font-bold text-primary-200 opacity-20 transform -rotate-12">
@@ -68,10 +106,10 @@ const Login = () => {
             <div className="text-center mb-8">
               <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center mx-auto mb-4">
                 <div className="w-24 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center">
-                  <img 
+                  <img
                     src="/FUTUREOFBUSINESS.png"
-                    alt="Hindustan Bills Logo" 
-                    className="w-full h-full object-cover rounded-full" 
+                    alt="Hindustan Bills Logo"
+                    className="w-full h-full object-cover rounded-full"
                   />
                 </div>
               </div>
@@ -80,6 +118,8 @@ const Login = () => {
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+
+              {/* Email */}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                   Email Address
@@ -104,6 +144,7 @@ const Login = () => {
                 )}
               </div>
 
+              {/* Password */}
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                   Password
@@ -135,6 +176,7 @@ const Login = () => {
                 )}
               </div>
 
+              {/* Remember + Forgot */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <input
@@ -169,6 +211,7 @@ const Login = () => {
                 </Link>
               </p>
             </div>
+
           </div>
         </motion.div>
       </div>

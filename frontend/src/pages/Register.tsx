@@ -279,6 +279,7 @@ import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { Eye, EyeOff, Mail, Lock, User, Building } from 'lucide-react'
 import toast from 'react-hot-toast'
+import api from '../api/axios'
 
 interface RegisterForm {
   firstName: string
@@ -286,9 +287,14 @@ interface RegisterForm {
   email: string
   password: string
   confirmPassword: string
-  businessName: string
-  businessType: string
+  businessName?: string
+  businessType?: string
   agreeToTerms: boolean
+}
+
+interface RegisterResponse {
+  token?: string
+  message?: string
 }
 
 const Register = () => {
@@ -310,13 +316,60 @@ const Register = () => {
   const onSubmit = async (data: RegisterForm) => {
     console.log('Register form data:', data)
     setIsLoading(true)
+
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-      toast.success('Registration successful! Welcome to Hindustan Bills!')
+      // Build payload expected by backend
+      const payload: Record<string, any> = {
+        name: `${data.firstName?.trim() || ''} ${data.lastName?.trim() || ''}`.trim(),
+        email: data.email,
+        password: data.password,
+        role: accountType === 'retailer' ? 'retailer' : 'customer',
+      }
+
+      // Add business details only for retailer
+      if (accountType === 'retailer') {
+        if (data.businessName) payload.businessName = data.businessName
+        if (data.businessType) payload.businessType = data.businessType
+      }
+
+      // Call backend register endpoint
+      const res = await api.post<RegisterResponse>('/auth/register', payload)
+      const resData = res && res.data ? res.data : ({} as RegisterResponse)
+
+      // If backend returns a token, consider user logged in
+      if (resData.token && typeof resData.token === 'string' && resData.token.length > 0) {
+        localStorage.setItem('hb_token', resData.token)
+        toast.success('Registration successful! Welcome to Hindustan Bills!')
+        navigate('/')
+        return
+      }
+
+      // If no token, show message (either backend message or default)
+      const msg = resData.message && typeof resData.message === 'string' && resData.message.length > 0
+        ? resData.message
+        : 'Registration successful. Please log in.' // fallback message
+      toast.success(msg)
+      // Navigate to login if backend didn't auto-login
       navigate('/login')
-    } catch (error) {
-      toast.error('Registration failed. Please try again.')
+    } catch (err: any) {
+      // Robust error extraction without optional chaining
+      let msg = 'Registration failed. Please try again.'
+
+      if (err) {
+        if (err.response && err.response.data) {
+          const d = err.response.data
+          if (d.message && typeof d.message === 'string') {
+            msg = d.message
+          } else if (typeof d === 'string') {
+            msg = d
+          }
+        } else if (err.message && typeof err.message === 'string') {
+          msg = err.message
+        }
+      }
+
+      console.error('Register error:', msg)
+      toast.error(msg)
     } finally {
       setIsLoading(false)
     }
