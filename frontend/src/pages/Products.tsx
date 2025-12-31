@@ -330,88 +330,160 @@
 // }
 
 // export default Products
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { ShoppingCart, Plus, Minus, CreditCard, QrCode, ArrowRight, CheckCircle2 } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { useEffect, useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import {
+  ShoppingCart,
+  Plus,
+  Minus,
+  CreditCard,
+  QrCode,
+  ArrowRight,
+  CheckCircle2,
+} from "lucide-react"
+import toast from "react-hot-toast"
 
-interface Product {
-  id: number
-  name: string
-  price: number
-  image: string
-  category: string
-  description: string
-}
+import StoreDetector from "../components/StoreDetector"
+import { getProducts } from "../lib/api"
+import type { Product } from "../lib/api"
 
+/* ================= TYPES ================= */
+
+// Cart must ALWAYS have _id
 interface CartItem extends Product {
+  _id: string
   quantity: number
 }
 
+/* ================= COMPONENT ================= */
+
 const Products = () => {
+  const [products, setProducts] = useState<Product[]>([])
   const [cart, setCart] = useState<CartItem[]>([])
   const [showCart, setShowCart] = useState(false)
-  const [step, setStep] = useState<'cart' | 'checkout' | 'payment' | 'success'>('cart')
-  const [paymentMethod, setPaymentMethod] = useState<string>('')
+  const [step, setStep] = useState<"cart" | "checkout" | "payment" | "success">(
+    "cart"
+  )
+  const [currentShop, setCurrentShop] = useState<{ _id: string } | null>(null)
 
-  const products: Product[] = [
-    { id: 1, name: 'Fresh Apples', price: 120, image: '🍎', category: 'Fruits', description: 'Fresh red apples, perfect for snacking' },
-    { id: 2, name: 'Bananas', price: 60, image: '🍌', category: 'Fruits', description: 'Sweet yellow bananas, rich in potassium' },
-    { id: 3, name: 'Milk', price: 45, image: '🥛', category: 'Dairy', description: 'Fresh cow milk, 1 liter' },
-    { id: 4, name: 'Bread', price: 35, image: '🍞', category: 'Bakery', description: 'Soft and fresh white bread loaf' },
-    { id: 5, name: 'Eggs', price: 80, image: '🥚', category: 'Dairy', description: 'Farm-fresh eggs, pack of 12' },
-    { id: 6, name: 'Rice', price: 150, image: '🍚', category: 'Grains', description: 'Premium basmati rice, 1kg pack' },
-  ]
+  /* ================= USER / ROLE ================= */
+
+  const user = JSON.parse(localStorage.getItem("user") || "{}")
+  const isRetailer = user?.role === "retailer"
+
+  /* ================= AUTO-SET SHOP FOR RETAILER ================= */
+
+  useEffect(() => {
+    if (isRetailer && user?.shopId) {
+      setCurrentShop({ _id: user.shopId })
+    }
+  }, [isRetailer, user?.shopId])
+
+  /* ================= FETCH PRODUCTS ================= */
+
+  useEffect(() => {
+    if (!currentShop?._id) {
+      setProducts([])
+      return
+    }
+
+    getProducts(currentShop._id)
+      .then((data) => setProducts(data))
+      .catch(() => toast.error("Failed to load products"))
+  }, [currentShop])
+
+  /* ================= CART LOGIC ================= */
 
   const addToCart = (product: Product) => {
-    setCart(prev => {
-      const existing = prev.find(i => i.id === product.id)
+    if (!product._id) return
+
+    setCart((prev) => {
+      const existing = prev.find((i) => i._id === product._id)
       if (existing) {
-        return prev.map(i => (i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i))
+        return prev.map((i) =>
+          i._id === product._id
+            ? { ...i, quantity: i.quantity + 1 }
+            : i
+        )
       }
-      return [...prev, { ...product, quantity: 1 }]
+      return [...prev, { ...(product as CartItem), quantity: 1 }]
     })
-    toast.success(`${product.name} added to cart!`)
+
+    toast.success(`${product.name} added to cart`)
   }
 
-  const removeFromCart = (id: number) => {
-    setCart(cart.filter(i => i.id !== id))
+  const removeFromCart = (id: string) => {
+    setCart((prev) => prev.filter((i) => i._id !== id))
   }
 
-  const updateQuantity = (id: number, q: number) => {
+  const updateQuantity = (id: string, q: number) => {
     if (q <= 0) removeFromCart(id)
-    else setCart(cart.map(i => (i.id === id ? { ...i, quantity: q } : i)))
+    else
+      setCart((prev) =>
+        prev.map((i) => (i._id === id ? { ...i, quantity: q } : i))
+      )
   }
 
   const total = cart.reduce((sum, i) => sum + i.price * i.quantity, 0)
 
   const handleProceed = () => {
-    if (step === 'cart') setStep('checkout')
-    else if (step === 'checkout') setStep('payment')
+    if (step === "cart") setStep("checkout")
+    else if (step === "checkout") setStep("payment")
   }
 
-  const handlePayment = (method: string) => {
-    setPaymentMethod(method)
-    setStep('success')
-    toast.success(`Payment successful via ${method}`)
-    setCart([])
-    setTimeout(() => {
+  /* ================= PAYMENT + RECEIPT ================= */
+
+  const handlePayment = async (method: string) => {
+    try {
+      setStep("success")
+
+      const res = await fetch("http://localhost:5000/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: cart.map((i) => ({
+            productId: i._id,
+            name: i.name,
+            price: i.price,
+            quantity: i.quantity,
+          })),
+          paymentMethod: method,
+        }),
+      })
+
+      const data = await res.json()
+
+      toast.success(`Payment successful via ${method}`)
+      setCart([])
       setShowCart(false)
-      setStep('cart')
-    }, 2500)
+      setStep("cart")
+
+      // Redirect to receipt verification
+      window.location.href = `/receipt/${data.receiptId}`
+    } catch {
+      toast.error("Payment failed")
+      setStep("payment")
+    }
   }
+
+  /* ================= UI ================= */
 
   return (
     <div className="pt-20">
-      {/* Header */}
-      <section className="gradient-bg section-padding text-center">
-        <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
+      {/* HEADER */}
+      <section className="section-padding text-center">
+        <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-5xl font-bold mb-4">
-            Our <span className="text-primary-600">Products</span>
+            Store <span className="text-primary-600">Products</span>
           </h1>
-          <p className="text-gray-600 text-lg mb-6">
-            Add items to your cart and experience a clean, smooth checkout.
-          </p>
+
+          {/* CUSTOMER ONLY */}
+          {!isRetailer && (
+            <div className="flex justify-center mb-6">
+              <StoreDetector onSelect={setCurrentShop} />
+            </div>
+          )}
+
           <button
             onClick={() => setShowCart(true)}
             className="btn-primary inline-flex items-center"
@@ -423,27 +495,45 @@ const Products = () => {
         </motion.div>
       </section>
 
-      {/* Product Grid */}
+      {/* PRODUCTS GRID */}
       <section className="bg-white section-padding">
         <div className="container-custom grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {products.map((p, i) => (
             <motion.div
-              key={p.id}
+              key={p._id}
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: i * 0.05 }}
               viewport={{ once: true }}
-              className="bg-white rounded-2xl shadow-lg border p-6 flex flex-col justify-between hover:shadow-2xl transition-all"
+              transition={{ delay: i * 0.05 }}
+              className="bg-white rounded-2xl shadow border p-6 flex flex-col justify-between"
             >
               <div className="text-center">
-                <div className="text-6xl mb-4">{p.image}</div>
+                <div className="text-6xl mb-4">
+                  {p.imageUrl ? (
+                    <img
+                      src={p.imageUrl}
+                      alt={p.name}
+                      className="mx-auto h-20 object-contain"
+                    />
+                  ) : (
+                    "🛒"
+                  )}
+                </div>
                 <h3 className="text-xl font-semibold">{p.name}</h3>
-                <p className="text-gray-600 text-sm mb-3">{p.description}</p>
-                <span className="inline-block bg-primary-100 text-primary-600 px-3 py-1 rounded-full text-sm">{p.category}</span>
+                <p className="text-gray-600 text-sm mb-2">{p.description}</p>
+                {p.category && (
+                  <span className="inline-block bg-primary-100 text-primary-600 px-3 py-1 rounded-full text-sm">
+                    {p.category}
+                  </span>
+                )}
               </div>
+
               <div className="flex items-center justify-between mt-6">
-                <span className="text-xl font-bold text-gray-900">₹{p.price}</span>
-                <button onClick={() => addToCart(p)} className="btn-primary flex items-center">
+                <span className="text-xl font-bold">₹{p.price}</span>
+                <button
+                  onClick={() => addToCart(p)}
+                  className="btn-primary flex items-center"
+                >
                   <Plus className="w-4 h-4 mr-1" /> Add
                 </button>
               </div>
@@ -452,119 +542,101 @@ const Products = () => {
         </div>
       </section>
 
-      {/* Cart + Checkout Modal */}
+      {/* CART MODAL */}
       <AnimatePresence>
         {showCart && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 30, opacity: 0 }}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden"
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl"
             >
-              {/* Header */}
-              <div className="flex justify-between items-center px-6 py-4 border-b">
-                <h3 className="text-2xl font-bold">
-                  {step === 'cart'
-                    ? 'Your Cart'
-                    : step === 'checkout'
-                    ? 'Checkout Details'
-                    : step === 'payment'
-                    ? 'Select Payment'
-                    : 'Order Successful 🎉'}
+              <div className="px-6 py-4 border-b flex justify-between">
+                <h3 className="text-xl font-bold">
+                  {step === "cart"
+                    ? "Your Cart"
+                    : step === "checkout"
+                    ? "Checkout"
+                    : step === "payment"
+                    ? "Payment"
+                    : "Success"}
                 </h3>
-                <button onClick={() => setShowCart(false)} className="text-gray-500 hover:text-gray-800">✕</button>
+                <button onClick={() => setShowCart(false)}>✕</button>
               </div>
 
               <div className="p-6 max-h-[70vh] overflow-y-auto">
-                {/* Step 1: Cart */}
-                {step === 'cart' && (
-                  <div className="space-y-4">
-                    {cart.length === 0 ? (
-                      <p className="text-center text-gray-600">Your cart is empty.</p>
-                    ) : (
-                      cart.map(item => (
-                        <div key={item.id} className="flex justify-between items-center bg-gray-50 p-4 rounded-xl">
-                          <div className="flex items-center space-x-3">
-                            <div className="text-3xl">{item.image}</div>
-                            <div>
-                              <p className="font-semibold">{item.name}</p>
-                              <p className="text-sm text-gray-600">₹{item.price} × {item.quantity}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="bg-gray-200 w-7 h-7 rounded-full flex items-center justify-center">-</button>
-                            <span>{item.quantity}</span>
-                            <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="bg-gray-200 w-7 h-7 rounded-full flex items-center justify-center">+</button>
-                            <button onClick={() => removeFromCart(item.id)} className="text-red-500 ml-2">✕</button>
-                          </div>
+                {step === "cart" &&
+                  cart.map((item) => (
+                    <div
+                      key={item._id}
+                      className="flex justify-between items-center bg-gray-50 p-3 rounded mb-2"
+                    >
+                      <div>
+                        <div className="font-medium">{item.name}</div>
+                        <div className="text-sm text-gray-600">
+                          ₹{item.price} × {item.quantity}
                         </div>
-                      ))
-                    )}
-                    {cart.length > 0 && (
-                      <div className="text-right font-semibold text-lg mt-4">
-                        Total: <span className="text-primary-600">₹{total}</span>
                       </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Step 2: Checkout */}
-                {step === 'checkout' && (
-                  <div className="space-y-4">
-                    <h4 className="font-semibold text-lg mb-2">Delivery Details</h4>
-                    <input className="input w-full" placeholder="Full Name" />
-                    <input className="input w-full" placeholder="Address" />
-                    <input className="input w-full" placeholder="Phone Number" />
-                    <p className="text-sm text-gray-500 mt-2">Estimated Delivery: 2-4 days</p>
-                  </div>
-                )}
-
-                {/* Step 3: Payment */}
-                {step === 'payment' && (
-                  <div className="space-y-4">
-                    <h4 className="font-semibold text-lg mb-3 text-center">Choose a Payment Method</h4>
-                    <div className="space-y-3">
-                      <button onClick={() => handlePayment('UPI')} className="payment-btn">
-                        <QrCode className="w-5 h-5 mr-3 text-primary-600" /> UPI / QR
-                      </button>
-                      <button onClick={() => handlePayment('Credit Card')} className="payment-btn border-gray-400">
-                        <CreditCard className="w-5 h-5 mr-3 text-gray-600" /> Credit / Debit Card
-                      </button>
-                      <button onClick={() => handlePayment('Cash on Delivery')} className="payment-btn border-gray-400">
-                        💵 Cash on Delivery
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() =>
+                            updateQuantity(item._id, item.quantity - 1)
+                          }
+                        >
+                          <Minus />
+                        </button>
+                        <span>{item.quantity}</span>
+                        <button
+                          onClick={() =>
+                            updateQuantity(item._id, item.quantity + 1)
+                          }
+                        >
+                          <Plus />
+                        </button>
+                      </div>
                     </div>
+                  ))}
+
+                {step === "payment" && (
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => handlePayment("UPI")}
+                      className="payment-btn"
+                    >
+                      <QrCode className="mr-2" /> UPI / QR
+                    </button>
+                    <button
+                      onClick={() => handlePayment("Card")}
+                      className="payment-btn"
+                    >
+                      <CreditCard className="mr-2" /> Card
+                    </button>
                   </div>
                 )}
 
-                {/* Step 4: Success */}
-                {step === 'success' && (
-                  <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="text-center py-12"
-                  >
+                {step === "success" && (
+                  <div className="text-center py-10">
                     <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                    <h4 className="text-2xl font-bold text-gray-800 mb-2">Payment Successful!</h4>
-                    <p className="text-gray-600">Your order has been placed successfully.</p>
-                  </motion.div>
+                    <h3 className="text-2xl font-bold">
+                      Payment Successful
+                    </h3>
+                  </div>
                 )}
               </div>
 
-              {/* Footer Buttons */}
-              {step !== 'success' && cart.length > 0 && (
-                <div className="border-t px-6 py-4 flex justify-end">
+              {step !== "success" && cart.length > 0 && (
+                <div className="px-6 py-4 border-t flex justify-end">
                   <button
                     onClick={handleProceed}
                     className="btn-primary flex items-center"
                   >
-                    Continue <ArrowRight className="ml-2 w-4 h-4" />
+                    Continue <ArrowRight className="ml-2" />
                   </button>
                 </div>
               )}

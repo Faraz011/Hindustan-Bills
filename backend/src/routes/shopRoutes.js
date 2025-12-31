@@ -1,31 +1,17 @@
-// cart + order routes combined
+// backend/src/routes/shopRoutes.js
 import express from "express";
 import { verifyToken, authorizeRoles } from "../middleware/authMiddleware.js";
-import {
-  addToCart,
-  getCart,
-  removeFromCart,
-  updateCartItem
-} from "../controllers/cartController.js";
-import {
-  placeOrder,
-  getOrders,
-  updateOrderStatus
-} from "../controllers/orderController.js";
+import { addShop, listShops, getNearbyShops } from "../controllers/shopController.js";
 
 const router = express.Router();
 
-// --- Cart routes (customer only) ---
-router.post("/cart/add", verifyToken, authorizeRoles("customer"), addToCart);
-router.get("/cart", verifyToken, authorizeRoles("customer"), getCart);
-router.post("/cart/remove", verifyToken, authorizeRoles("customer"), removeFromCart);
-router.post("/cart/update", verifyToken, authorizeRoles("customer"), updateCartItem);
+// Add a shop (retailer/admin)
+router.post("/add", verifyToken, authorizeRoles("retailer", "admin"), addShop);
 
-// --- Order routes ---
-router.post("/order", verifyToken, authorizeRoles("customer"), placeOrder);
-router.get("/orders", verifyToken, authorizeRoles("customer"), getOrders);
+// List all shops (public)
+router.get("/", listShops);
 
-// Retailer/admin can change order status
-router.put("/order/:id/status", verifyToken, authorizeRoles("retailer", "admin"), updateOrderStatus);
+// Nearby search
+router.get("/nearby", getNearbyShops);
 
 export default router;

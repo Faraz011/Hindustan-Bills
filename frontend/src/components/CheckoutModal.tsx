@@ -3,6 +3,9 @@ import { useState } from "react"
 import { CreditCard, QrCode, Truck, CheckCircle } from "lucide-react"
 import toast from "react-hot-toast"
 import PaymentStep from "./PaymentStep"
+import { useNavigate } from "react-router-dom"
+
+const navigate = useNavigate()
 
 interface CartItem {
   id: number
@@ -23,15 +26,42 @@ const CheckoutModal = ({ cart, onClose, onSuccess }: CheckoutModalProps) => {
   const [method, setMethod] = useState<string>("")
   const total = cart.reduce((t, i) => t + i.price * i.quantity, 0)
 
-  const handlePayment = (selectedMethod: string) => {
-    setMethod(selectedMethod)
-    setStep(3)
-    setTimeout(() => {
-      toast.success(`Payment successful via ${selectedMethod}`)
-      onSuccess()
-      onClose()
-    }, 2000)
+  const handlePayment = async (selectedMethod: string) => {
+    try {
+      setMethod(selectedMethod)
+      setStep(3)
+
+      // simulate payment delay
+      setTimeout(async () => {
+        const res = await fetch("http://localhost:5000/api/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            items: cart.map((i) => ({
+              productId: i.id,
+              name: i.name,
+              price: i.price,
+              quantity: i.quantity,
+            })),
+            paymentMethod: selectedMethod,
+          }),
+        })
+
+        const data = await res.json()
+
+        toast.success(`Payment successful via ${selectedMethod}`)
+
+        onClose()
+
+        // 👉 REDIRECT TO RECEIPT (verification page)
+        navigate(`/receipt/${data.receiptId}`)
+      }, 1500)
+    } catch (err) {
+      toast.error("Payment failed")
+      setStep(2)
+    }
   }
+
 
   return (
     <motion.div

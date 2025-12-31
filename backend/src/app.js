@@ -8,6 +8,8 @@ import barcodeRoutes from "./routes/barcodeRoutes.js"; // barcode scanning/verif
 import orderRoutes from "./routes/orderRoutes.js";     // order routes
 import cartRoutes from "./routes/cartRoutes.js";       // cart routes
 import paymentRoutes from "./routes/paymentRoutes.js"; // ✅ new payment route
+import shopRoutes from "./routes/shopRoutes.js";
+import receiptRoutes from "./routes/receipt.routes.js";
 
 dotenv.config();
 const app = express();
@@ -21,11 +23,13 @@ app.use("/invoices", express.static("invoices"));
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api", receiptRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/barcode", barcodeRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/payments", paymentRoutes); // ✅ added payment integration
+app.use("/api/shops", shopRoutes);
 
 // Health check
 app.get("/", (req, res) => {
