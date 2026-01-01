@@ -15,8 +15,16 @@ const Hero = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = `${process.env.VITE_API_URL}/api/auth/google/callback`;
-  };
+  const VITE_API_URL = import.meta.env.VITE_API_URL;
+
+  if (!VITE_API_URL) {
+    console.error("VITE_API_URL is not defined");
+    return;
+  }
+
+  window.location.href = `${VITE_API_URL}/api/auth/google`;
+};
+
 
   return (
     <>
