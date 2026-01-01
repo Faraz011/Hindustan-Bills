@@ -13,12 +13,26 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      required: function () {
+        return !this.googleId; // Password required only if no Google ID
+      },
+    },
+    googleId: {
+      type: String,
+      sparse: true,
     },
     role: {
       type: String,
       enum: ["customer", "retailer", "admin"], // allowed roles
       default: "customer", // default if not specified
+    },
+    businessName: {
+      type: String,
+      required: false,
+    },
+    businessType: {
+      type: String,
+      required: false,
     },
   },
   { timestamps: true }

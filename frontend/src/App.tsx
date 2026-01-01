@@ -1,19 +1,20 @@
-import { Routes, Route } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import Header from './components/Header'
-import Footer from './components/Footer'
-import Home from './pages/Home'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import Products from './pages/Products'
-import Contact from './pages/Contact'
-import About from './pages/About';
-import Privacy from './pages/Privacy';
-import Terms from './pages/Terms';
-import RetailerDashboard from './pages/RetailerDashboard';
-import History from './pages/History';
-import Receipt from './pages/Receipt';
-import Cart from './pages/Cart';
+import { Routes, Route } from "react-router-dom";
+import { motion } from "framer-motion";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import GoogleCallback from "./pages/GoogleCallback";
+import Products from "./pages/Products";
+import Contact from "./pages/Contact";
+import About from "./pages/About";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import RetailerDashboard from "./pages/RetailerDashboard";
+import History from "./pages/History";
+import Receipt from "./pages/Receipt";
+import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 
 const dummyCart = [
@@ -31,7 +32,6 @@ const dummyCart = [
   },
 ];
 
-
 function App() {
   return (
     <div className="min-h-screen bg-white">
@@ -45,6 +45,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/auth/google/callback" element={<GoogleCallback />} />
           <Route path="/products" element={<Products />} />
           <Route path="/cart" element={<Cart />} />
           {/* <Route path="/receipt/:id" element={<Receipt />} /> */}
@@ -60,7 +61,7 @@ function App() {
       </motion.main>
       <Footer />
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
