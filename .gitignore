@@ -12,3 +12,11 @@ npm-debug.log*
 # system files
 .DS_Store
 Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# build outputs
+dist/
+build/
