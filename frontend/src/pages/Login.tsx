@@ -61,7 +61,7 @@ const Login = () => {
 
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
-    const endpoint = isLogin ? '/auth/login' : '/auth/register';
+    const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
 
     try {
       // 1. Authenticate to get the token
