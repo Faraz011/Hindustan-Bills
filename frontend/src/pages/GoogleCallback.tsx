@@ -54,7 +54,7 @@ const GoogleCallback = () => {
         updateData.businessType = data.businessType;
       }
 
-      await api.put("/auth/update-profile", updateData);
+      await api.put("/api/auth/update-profile", updateData);
       toast.success("Profile updated successfully!");
       navigate(data.role === "retailer" ? "/dashboard" : "/products");
     } catch (err: any) {
