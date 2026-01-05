@@ -41,22 +41,34 @@ export interface Shop {
   _id: string;
   name: string;
   businessType: string;
-  address?: {
+  address: {
     street: string;
     city: string;
     state: string;
     pincode: string;
     country: string;
   };
+  contact?: {
+    phone: string;
+    email: string;
+  };
+  businessHours?: {
+    monday: { open: string; close: string };
+    tuesday: { open: string; close: string };
+    wednesday: { open: string; close: string };
+    thursday: { open: string; close: string };
+    friday: { open: string; close: string };
+    saturday: { open: string; close: string };
+    sunday: { open: string; close: string };
+  };
   metadata?: {
     fssaiLicense?: string;
     gstNumber?: string;
   };
-  isActive: boolean;
-  owner?: string;
-  latitude?: number;
-  longitude?: number;
-  distance?: number;
+  owner: {
+    name: string;
+    email: string;
+  } | null;
 }
 
 export interface Product {
@@ -220,6 +232,14 @@ export const getOrdersHistory = async (params?: {
     `/api/orders/history?${query.toString()}`
   );
   return res.orders || [];
+};
+
+// -------------------- Shops --------------------
+export const getAvailableShops = async () => {
+  const res = await api.get<{ shops: Shop[]; count: number }>(
+    "/api/shop/available"
+  );
+  return res.shops || [];
 };
 
 // -------------------- Payments (optional) --------------------

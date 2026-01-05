@@ -1,38 +1,8 @@
-// frontend/src/pages/customer/dashboard/pages/ShopSelection.tsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, Clock, Phone, Store } from "lucide-react";
 import toast from "react-hot-toast";
-
-interface Shop {
-  _id: string;
-  name: string;
-  businessType: string;
-  address: {
-    street: string;
-    city: string;
-    state: string;
-    pincode: string;
-    country: string;
-  };
-  contact?: {
-    phone: string;
-    email: string;
-  };
-  businessHours?: {
-    monday: { open: string; close: string };
-    tuesday: { open: string; close: string };
-    wednesday: { open: string; close: string };
-    thursday: { open: string; close: string };
-    friday: { open: string; close: string };
-    saturday: { open: string; close: string };
-    sunday: { open: string; close: string };
-  };
-  owner: {
-    name: string;
-    email: string;
-  } | null;
-}
+import { getAvailableShops, Shop } from "/src/lib/api";
 
 export default function ShopSelection() {
   const [shops, setShops] = useState<Shop[]>([]);
@@ -46,18 +16,8 @@ export default function ShopSelection() {
 
   const fetchAvailableShops = async () => {
     try {
-      const response = await fetch("/api/shop/available", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("hb_token")}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      setShops(data.shops);
+      const shops = await getAvailableShops();
+      setShops(shops);
     } catch (error) {
       console.error("Error fetching shops:", error);
       toast.error("Failed to load available shops");
