@@ -15,7 +15,7 @@ import Terms from "./pages/Terms";
 import DashboardLayout from "./pages/customer/dashboard/Layout";
 import RetailerLayout from "./pages/retailer/dashboard/Layout";
 import DashboardPage from "./pages/retailer/dashboard/pages/Dashboard";
-import ProductsPage from "./pages/retailer/dashboard/pages/Products";
+import ProductsPage from "./pages/retailer/dashboard/pages/products";
 import OrdersPage from "./pages/retailer/dashboard/pages/Orders";
 import ShopDetailsPage from "./pages/retailer/dashboard/pages/ShopDetails";
 import CustomerDashboardPage from "./pages/customer/dashboard/pages/Dashboard";
