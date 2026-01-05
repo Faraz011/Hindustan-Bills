@@ -51,8 +51,6 @@ export const getOrderHistory = asyncHandler(async (req, res) => {
   console.log("Found orders:", orders.length);
 
   res.json({ orders });
-
-  res.json({ orders });
 });
 
 // @desc    Get all orders for a shop
