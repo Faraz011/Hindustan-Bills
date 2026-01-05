@@ -35,10 +35,14 @@ const GoogleCallback = () => {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
         setUserInfo(payload);
-        
+
         // If profile is already completed, redirect to dashboard
         if (payload.profileCompleted) {
-          navigate(payload.role === "retailer" ? "/retailer/dashboard" : "/customer/dashboard");
+          navigate(
+            payload.role === "retailer"
+              ? "/retailer/dashboard"
+              : "/customer/dashboard"
+          );
           return;
         }
       } catch (err) {
