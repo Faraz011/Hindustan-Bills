@@ -132,7 +132,7 @@ export const getAvailableShops = asyncHandler(async (req, res) => {
     .lean();
 
   // Filter out shops where owner is null (owner doesn't exist in database)
-  const validShops = shops.filter(shop => shop.owner !== null);
+  const validShops = shops.filter((shop) => shop.owner !== null);
 
   res.json({
     shops: validShops,

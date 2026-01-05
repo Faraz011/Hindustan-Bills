@@ -25,13 +25,20 @@ export const getProducts = asyncHandler(async (req, res) => {
 // @access  Private
 export const createProduct = asyncHandler(async (req, res) => {
   console.log(`Creating product for user ${req.user.id}`);
-  
+
   // Find the shop owned by the current user
   const shop = await Shop.findOne({ owner: req.user.id });
-  console.log(`Shop found for user ${req.user.id}:`, shop ? shop._id : 'No shop found');
-  
+  console.log(
+    `Shop found for user ${req.user.id}:`,
+    shop ? shop._id : "No shop found"
+  );
+
   if (!shop) {
-    return res.status(404).json({ message: "Shop not found. Please complete your shop setup first." });
+    return res
+      .status(404)
+      .json({
+        message: "Shop not found. Please complete your shop setup first.",
+      });
   }
 
   const { name, description, price, category, stock, imageUrl, barcode, sku } =

@@ -97,7 +97,13 @@ export const login = async (req, res) => {
 
     // Create JWT — includes role
     const token = jwt.sign(
-      { id: user._id, name: user.name, email: user.email, role: user.role, profileCompleted: user.profileCompleted },
+      {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profileCompleted: user.profileCompleted,
+      },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -121,7 +127,13 @@ export const googleAuthSuccess = async (req, res) => {
   try {
     const user = req.user;
     const token = jwt.sign(
-      { id: user._id, name: user.name, email: user.email, role: user.role, profileCompleted: user.profileCompleted },
+      {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profileCompleted: user.profileCompleted,
+      },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -155,14 +167,16 @@ export const updateProfile = async (req, res) => {
     if (role === "retailer" && businessName && businessType) {
       const existingShop = await Shop.findOne({ owner: userId });
       if (!existingShop) {
-        console.log(`Creating shop for retailer ${userId}: ${businessName}, ${businessType}`);
+        console.log(
+          `Creating shop for retailer ${userId}: ${businessName}, ${businessType}`
+        );
         const shop = await Shop.create({
           owner: userId,
           name: businessName,
           businessType: businessType,
           address: {
             street: "To be updated",
-            city: "To be updated", 
+            city: "To be updated",
             state: "To be updated",
             pincode: "000000",
             country: "India",
@@ -183,7 +197,13 @@ export const updateProfile = async (req, res) => {
 
     // Generate new token with updated role
     const token = jwt.sign(
-      { id: user._id, name: user.name, email: user.email, role: user.role, profileCompleted: user.profileCompleted },
+      {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profileCompleted: user.profileCompleted,
+      },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
