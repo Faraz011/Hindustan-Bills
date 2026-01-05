@@ -1,5 +1,5 @@
 // backend/src/models/Product.js
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const productSchema = new mongoose.Schema(
   {
@@ -30,12 +30,12 @@ const productSchema = new mongoose.Schema(
     },
     shop: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Shop',
+      ref: "Shop",
       required: true,
     },
     image: {
       type: String,
-      default: '/placeholder-product.png',
+      default: "/placeholder-product.png",
     },
     isActive: {
       type: Boolean,
@@ -46,7 +46,7 @@ const productSchema = new mongoose.Schema(
       barcode: {
         type: String,
         sparse: true,
-        unique: true
+        unique: true,
       },
       weight: Number,
       dimensions: {
@@ -64,7 +64,7 @@ const productSchema = new mongoose.Schema(
 );
 
 // Index for faster queries
-productSchema.index({ name: 'text', description: 'text' });
+productSchema.index({ name: "text", description: "text" });
 productSchema.index({ shop: 1, isActive: 1 });
 
-export default mongoose.model('Product', productSchema);
+export default mongoose.model("Product", productSchema);

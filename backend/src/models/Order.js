@@ -1,10 +1,10 @@
 // backend/src/models/Order.js
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const orderItemSchema = new mongoose.Schema({
   product: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Product',
+    ref: "Product",
     required: true,
   },
   quantity: {
@@ -33,11 +33,11 @@ const orderSchema = new mongoose.Schema(
     },
     customer: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
     },
     shop: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Shop',
+      ref: "Shop",
       required: true,
     },
     items: [orderItemSchema],
@@ -58,8 +58,8 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
-      default: 'pending',
+      enum: ["pending", "processing", "shipped", "delivered", "cancelled"],
+      default: "pending",
     },
     shippingAddress: {
       type: {
@@ -73,15 +73,15 @@ const orderSchema = new mongoose.Schema(
     payment: {
       status: {
         type: String,
-        enum: ['pending', 'paid', 'failed', 'refunded'],
-        default: 'pending',
+        enum: ["pending", "paid", "failed", "refunded"],
+        default: "pending",
       },
       method: String,
       transactionId: String,
       amount: Number,
       currency: {
         type: String,
-        default: 'INR',
+        default: "INR",
       },
     },
   },
@@ -98,12 +98,12 @@ orderSchema.index({ customer: 1 });
 // orderSchema.index({ orderNumber: 1 }); // Removed - unique: true already creates this index
 
 // Generate order number
-orderSchema.pre('save', async function (next) {
+orderSchema.pre("save", async function (next) {
   if (!this.isNew) return next();
-  
+
   const count = await this.constructor.countDocuments();
-  this.orderNumber = `ORD${Date.now()}${count.toString().padStart(5, '0')}`;
+  this.orderNumber = `ORD${Date.now()}${count.toString().padStart(5, "0")}`;
   next();
 });
 
-export default mongoose.model('Order', orderSchema);
+export default mongoose.model("Order", orderSchema);
