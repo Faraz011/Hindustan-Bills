@@ -1,107 +1,124 @@
-import Order from "../models/Order.js";
-import Cart from "../models/Cart.js";
-import Product from "../models/Product.js";
+import Order from '../models/Order.js';
+import Product from '../models/Product.js';
+import asyncHandler from 'express-async-handler';
 
-// Place a new order (from cart)
-export const placeOrder = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const cart = await Cart.findOne({ user: userId }).populate("items.product");
+// @desc    Get all orders for a shop
+// @route   GET /api/shop/orders
+// @access  Private
+export const getOrders = asyncHandler(async (req, res) => {
+  const orders = await Order.find({ shop: req.user.shop })
+    .populate('customer', 'name email')
+    .populate('items.product', 'name price')
+    .sort({ createdAt: -1 })
+    .lean();
 
-    if (!cart || cart.items.length === 0)
-      return res.status(400).json({ message: "Cart is empty" });
+  res.json(orders);
+});
 
-    const items = cart.items.map(i => {
-      if (!i.product) throw new Error("Product not found in DB (cart item)");
-      return {
-        product: i.product._id,
-        quantity: i.quantity,
-        price: i.product.price
-      };
-    });
+// @desc    Get single order
+// @route   GET /api/shop/orders/:id
+// @access  Private
+export const getOrderById = asyncHandler(async (req, res) => {
+  const order = await Order.findOne({
+    _id: req.params.id,
+    shop: req.user.shop,
+  })
+    .populate('customer', 'name email')
+    .populate('items.product', 'name price')
+    .lean();
 
-    const totalAmount = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-
-    const order = await Order.create({
-      user: userId,
-      items,
-      totalAmount,
-      status: "pending"
-    });
-
-    // Clear the cart
-    cart.items = [];
-    await cart.save();
-
-    await order.populate("items.product");
-    res.status(201).json({ message: "Order placed successfully", order });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  if (!order) {
+    res.status(404);
+    throw new Error('Order not found');
   }
-};
 
-// Get all orders of the logged-in user
-export const getOrders = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const orders = await Order.find({ user: userId })
-      .populate("items.product")
-      .sort({ createdAt: -1 });
+  res.json(order);
+});
 
-    res.json(orders);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+// @desc    Create new order
+// @route   POST /api/shop/orders
+// @access  Private
+export const createOrder = asyncHandler(async (req, res) => {
+  const { items, customer, shippingAddress, payment } = req.body;
 
-// Update order status (retailer/admin)
-export const updateOrderStatus = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
+  // Calculate order totals
+  let subtotal = 0;
+  const orderItems = [];
 
-    if (!["pending", "completed", "cancelled"].includes(status)) {
-      return res.status(400).json({ message: "Invalid status" });
+  // Validate products and calculate totals
+  for (const item of items) {
+    const product = await Product.findById(item.product);
+    if (!product) {
+      res.status(400);
+      throw new Error(`Product ${item.product} not found`);
     }
 
-    const order = await Order.findById(id);
-    if (!order) return res.status(404).json({ message: "Order not found" });
-
-    order.status = status;
-    await order.save();
-
-    await order.populate("items.product");
-    res.json({ message: "Order status updated", order });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-// ✅ New: Get order history with optional filters (status, date range)
-export const getOrdersHistory = async (req, res) => {
-  try {
-    const { status, startDate, endDate } = req.query;
-    let filter = {};
-
-    // Customers see only their orders
-    if (req.user.role === "customer") filter.user = req.user.id;
-
-    // Optional status filter
-    if (status) filter.status = status;
-
-    // Optional date range filter
-    if (startDate || endDate) {
-      filter.createdAt = {};
-      if (startDate) filter.createdAt.$gte = new Date(startDate);
-      if (endDate) filter.createdAt.$lte = new Date(endDate);
+    if (product.stock < item.quantity) {
+      res.status(400);
+      throw new Error(`Not enough stock for ${product.name}`);
     }
 
-    const orders = await Order.find(filter)
-      .populate("items.product")
-      .sort({ createdAt: -1 });
+    const itemTotal = product.price * item.quantity;
+    subtotal += itemTotal;
 
-    res.json({ orders });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    orderItems.push({
+      product: product._id,
+      name: product.name,
+      quantity: item.quantity,
+      price: product.price,
+      total: itemTotal,
+    });
   }
-};
+
+  // Calculate tax (example: 18% GST)
+  const tax = subtotal * 0.18;
+  const total = subtotal + tax;
+
+  // Create order
+  const order = new Order({
+    customer,
+    shop: req.user.shop,
+    items: orderItems,
+    subtotal,
+    tax,
+    total,
+    shippingAddress,
+    payment: {
+      ...payment,
+      amount: total,
+    },
+  });
+
+  // Update product stock
+  for (const item of items) {
+    await Product.updateOne(
+      { _id: item.product },
+      { $inc: { stock: -item.quantity } }
+    );
+  }
+
+  const createdOrder = await order.save();
+  res.status(201).json(createdOrder);
+});
+
+// @desc    Update order status
+// @route   PUT /api/shop/orders/:id/status
+// @access  Private
+export const updateOrderStatus = asyncHandler(async (req, res) => {
+  const { status } = req.body;
+
+  const order = await Order.findOne({
+    _id: req.params.id,
+    shop: req.user.shop,
+  });
+
+  if (!order) {
+    res.status(404);
+    throw new Error('Order not found');
+  }
+
+  order.status = status;
+  const updatedOrder = await order.save();
+
+  res.json(updatedOrder);
+});

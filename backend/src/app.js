@@ -58,11 +58,11 @@ app.use("/api/barcode", barcodeRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/payments", paymentRoutes); // ✅ added payment integration
-app.use("/api/shops", shopRoutes);
+app.use("/api/shop", shopRoutes);
 
 // Health check
 app.get("/", (req, res) => {
-  res.send("🧾 Hindustan Bills API is running!");
+  res.send("Hindustan Bills API is running!");
 });
 
 export default app;

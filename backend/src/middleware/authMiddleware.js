@@ -1,7 +1,8 @@
+// src/middleware/authMiddleware.js
 import jwt from "jsonwebtoken";
 
-//  Verify user token
-export const verifyToken = (req, res, next) => {
+// Verify user token
+export const protect = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -17,11 +18,11 @@ export const verifyToken = (req, res, next) => {
   }
 };
 
-//  Restrict access based on role
+// Restrict access based on role
 export const authorizeRoles = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ message: "You are not authorized to perform this action" });
+      return res.status(403).json({ message: "Not authorized to access this route" });
     }
     next();
   };

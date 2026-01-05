@@ -6,14 +6,11 @@ import app from "./src/app.js";
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI ;
+const MONGO_URI = process.env.MONGO_URI;
 
 const startServer = async () => {
   try {
-    await mongoose.connect(MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(MONGO_URI);
     console.log("✅ MongoDB connected successfully");
 
     app.listen(PORT, () => {

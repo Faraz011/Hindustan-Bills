@@ -1,32 +1,27 @@
-// src/routes/orderRoutes.js
-import express from "express";
-import { verifyToken, authorizeRoles } from "../middleware/authMiddleware.js";
-import { 
-  placeOrder, 
-  getOrders, 
-  updateOrderStatus, 
-  getOrdersHistory 
-} from "../controllers/orderController.js";
+// backend/src/routes/orderRoutes.js
+import express from 'express';
+import { protect } from '../middleware/authMiddleware.js';
+import {
+  getOrders,
+  getOrderById,
+  createOrder,
+  updateOrderStatus,
+} from '../controllers/orderController.js';
 
 const router = express.Router();
 
-/**
- * CUSTOMER ROUTES
- */
-// Place an order (only customers)
-router.post("/place", verifyToken, authorizeRoles("customer"), placeOrder);
+// All routes are protected and require authentication
+router
+  .route('/')
+  .get(protect, getOrders)
+  .post(protect, createOrder);
 
-// Get all orders of logged-in customer
-router.get("/", verifyToken, authorizeRoles("customer"), getOrders);
+router
+  .route('/:id')
+  .get(protect, getOrderById);
 
-/**
- * RETAILER / ADMIN ROUTES
- */
-// Update order status (retailer or admin)
-router.put("/status/:id", verifyToken, authorizeRoles("retailer", "admin"), updateOrderStatus);
-
-// Get order history (optional filters: status, startDate, endDate)
-// Accessible by customers (their own orders) and retailers/admins (all orders)
-router.get("/history", verifyToken, getOrdersHistory);
+router
+  .route('/:id/status')
+  .put(protect, updateOrderStatus);
 
 export default router;

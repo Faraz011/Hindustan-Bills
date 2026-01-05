@@ -1,17 +1,28 @@
-// backend/src/routes/shopRoutes.js
 import express from "express";
-import { verifyToken, authorizeRoles } from "../middleware/authMiddleware.js";
-import { addShop, listShops, getNearbyShops } from "../controllers/shopController.js";
+import { protect } from "../middleware/authMiddleware.js";
+import {
+  getShopDetails,
+  updateShopDetails,
+  getProducts,
+  getOrders,
+  getAvailableShops,
+} from "../controllers/shopController.js";
 
 const router = express.Router();
 
-// Add a shop (retailer/admin)
-router.post("/add", verifyToken, authorizeRoles("retailer", "admin"), addShop);
+// Shop routes
+router
+  .route("/details")
+  .get(protect, getShopDetails)
+  .put(protect, updateShopDetails);
 
-// List all shops (public)
-router.get("/", listShops);
+// Product routes
+router.get("/products", protect, getProducts);
 
-// Nearby search
-router.get("/nearby", getNearbyShops);
+// Order routes
+router.get("/orders", protect, getOrders);
+
+// Available shops for customers
+router.get("/available", protect, getAvailableShops);
 
 export default router;

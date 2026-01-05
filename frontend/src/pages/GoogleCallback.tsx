@@ -35,6 +35,12 @@ const GoogleCallback = () => {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
         setUserInfo(payload);
+        
+        // If profile is already completed, redirect to dashboard
+        if (payload.profileCompleted) {
+          navigate(payload.role === "retailer" ? "/retailer/dashboard" : "/customer/dashboard");
+          return;
+        }
       } catch (err) {
         console.error("Error decoding token:", err);
       }
@@ -54,9 +60,18 @@ const GoogleCallback = () => {
         updateData.businessType = data.businessType;
       }
 
-      await api.put("/api/auth/update-profile", updateData);
+      const response = await api.put("/api/auth/update-profile", updateData);
+      const { token: newToken } = response.data;
+
+      // Update the stored token with the new one that has the correct role
+      if (newToken) {
+        localStorage.setItem("hb_token", newToken);
+      }
+
       toast.success("Profile updated successfully!");
-      navigate(data.role === "retailer" ? "/dashboard" : "/products");
+      navigate(
+        data.role === "retailer" ? "/retailer/dashboard" : "/customer/dashboard"
+      );
     } catch (err: any) {
       toast.error("Failed to update profile");
     } finally {

@@ -1,10 +1,31 @@
 import express from "express";
-import { verifyToken } from "../middleware/authMiddleware.js";
-import { verifyBarcode } from "../controllers/barcodeController.js";
+import { protect } from "../middleware/authMiddleware.js";
+import {
+  scanProductByBarcode,
+  searchProducts,
+  scanProduct,
+  getSessionProducts,
+  updateScannedProduct,
+  removeScannedProduct,
+  clearSession,
+} from "../controllers/barcodeController.js";
 
 const router = express.Router();
 
-// Verify barcode and get product details
-router.post("/verify", verifyToken, verifyBarcode);
+// Protect all routes
+router.use(protect);
+
+// Session-based scanning
+router.post("/scan", scanProduct);
+router.get("/session/:sessionCode", getSessionProducts);
+router.put("/session/:sessionCode/:scannedProductId", updateScannedProduct);
+router.delete("/session/:sessionCode/:scannedProductId", removeScannedProduct);
+router.delete("/session/:sessionCode", clearSession);
+
+// Legacy barcode scanning (for backward compatibility)
+router.get("/scan/:barcode", scanProductByBarcode);
+
+// Search products
+router.get("/search", searchProducts);
 
 export default router;

@@ -12,7 +12,11 @@ interface Shop {
   metadata?: Record<string, any>;
 }
 
-export default function StoreDetector({ onSelect }: { onSelect?: (shop: Shop | null) => void }) {
+export default function StoreDetector({
+  onSelect,
+}: {
+  onSelect?: (shop: Shop | null) => void;
+}) {
   const [loading, setLoading] = useState(false);
   const [shop, setShop] = useState<Shop | null>(null);
 
@@ -34,22 +38,27 @@ export default function StoreDetector({ onSelect }: { onSelect?: (shop: Shop | n
           // call backend to find nearby shops (backend should expose /shops/nearby?lat=..&lng=..)
           type NearbyShopsResponse = {
             shops: {
-                _id: string;
-                name: string;
-                latitude?: number;
-                longitude?: number;
-                address?: string;
-                distance?: number;
-        }[];
-        };
+              _id: string;
+              name: string;
+              latitude?: number;
+              longitude?: number;
+              address?: string;
+              distance?: number;
+            }[];
+          };
 
-          const res = await api.get<NearbyShopsResponse>(`/shops/nearby?lat=${lat}&lng=${lng}`);
-          const nearest = res.data?.shops && res.data.shops.length > 0 ? res.data.shops[0] : null;
+          const res = await api.get<NearbyShopsResponse>(
+            `/shops/nearby?lat=${lat}&lng=${lng}`
+          );
+          const nearest =
+            res.data?.shops && res.data.shops.length > 0
+              ? res.data.shops[0]
+              : null;
           setShop(nearest);
           if (onSelect) onSelect(nearest);
           if (nearest) toast.success(`Detected store: ${nearest.name}`);
           else toast("No nearby store detected.");
-        } catch (err:any) {
+        } catch (err: any) {
           console.error(err);
           toast.error("Failed to query nearby stores.");
         } finally {
@@ -78,7 +87,9 @@ export default function StoreDetector({ onSelect }: { onSelect?: (shop: Shop | n
         {shop ? (
           <div className="text-sm text-gray-700">
             <div className="font-medium">{shop.name}</div>
-            {shop.address && <div className="text-xs text-gray-500">{shop.address}</div>}
+            {shop.address && (
+              <div className="text-xs text-gray-500">{shop.address}</div>
+            )}
           </div>
         ) : (
           <div className="text-sm text-gray-500">No store detected</div>

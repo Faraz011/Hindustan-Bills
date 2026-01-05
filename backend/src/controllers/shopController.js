@@ -1,83 +1,141 @@
-// backend/src/controllers/shopController.js
 import Shop from "../models/Shop.js";
+import User from "../models/User.js";
+import asyncHandler from "express-async-handler";
 
-/**
- * Add a shop (retailer/admin)
- * Body: { name, address, latitude, longitude, metadata }
- */
-export const addShop = async (req, res) => {
-  try {
-    const { name, address, latitude, longitude, metadata } = req.body;
-    const owner = req.user?.id;
-    const shop = await Shop.create({ name, address, latitude, longitude, metadata, owner });
-    res.json({ shop });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: err.message });
+// @desc    Get shop details
+// @route   GET /api/shop/details
+// @access  Private
+export const getShopDetails = asyncHandler(async (req, res) => {
+  console.log("getShopDetails called with user ID:", req.user.id);
+  const shop = await Shop.findOne({ owner: req.user.id }).select("-__v").lean();
+
+  console.log("Shop found:", shop ? "Yes" : "No");
+  if (shop) {
+    console.log("Shop data:", JSON.stringify(shop, null, 2));
   }
-};
 
-export const listShops = async (req, res) => {
-  try {
-    const shops = await Shop.find().sort({ name: 1 });
-    res.json({ shops });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: err.message });
+  if (!shop) {
+    console.log("Returning 404 - shop not found");
+    return res.status(404).json({ message: "Shop not found" });
   }
-};
 
-/**
- * GET /shops/nearby?lat=..&lng=..&radiusKm=..
- * Returns shops sorted by distance. Each shop includes a `distance` (km)
- */
-export const getNearbyShops = async (req, res) => {
-  try {
-    const lat = parseFloat(req.query.lat);
-    const lng = parseFloat(req.query.lng);
-    if (Number.isNaN(lat) || Number.isNaN(lng)) {
-      return res.status(400).json({ message: "lat & lng query params required" });
+  console.log("Returning shop data");
+  res.json(shop);
+});
+
+// @desc    Create or update shop details
+// @route   PUT /api/shop/details
+// @access  Private
+export const updateShopDetails = asyncHandler(async (req, res) => {
+  console.log("updateShopDetails called with user ID:", req.user.id);
+  console.log("Request body:", JSON.stringify(req.body, null, 2));
+
+  const { name, address, businessType, metadata, isActive } = req.body;
+
+  const { gstNumber, fssaiLicense } = metadata || {};
+
+  let shop = await Shop.findOne({ owner: req.user.id });
+  console.log("Existing shop found:", shop ? "Yes" : "No");
+
+  if (!shop) {
+    console.log("Creating new shop...");
+    // Create new shop if it doesn't exist
+    shop = new Shop({
+      owner: req.user.id,
+      name,
+      address: {
+        ...address,
+        coordinates: {
+          type: "Point",
+          coordinates: [0, 0], // Default coordinates, can be updated later with actual location
+        },
+      },
+      businessType: businessType || "retail",
+      metadata: {
+        gstNumber,
+        fssaiLicense,
+      },
+      isActive: isActive !== undefined ? isActive : true,
+    });
+  } else {
+    console.log("Updating existing shop...");
+    // Update existing shop
+    shop.name = name || shop.name;
+    if (address) {
+      shop.address.street = address.street || shop.address.street;
+      shop.address.city = address.city || shop.address.city;
+      shop.address.state = address.state || shop.address.state;
+      shop.address.pincode = address.pincode || shop.address.pincode;
+      shop.address.country = address.country || shop.address.country;
+      // Preserve existing coordinates if they exist
+      if (!shop.address.coordinates) {
+        shop.address.coordinates = {
+          type: "Point",
+          coordinates: [0, 0],
+        };
+      }
     }
-
-    const radiusKm = parseFloat(req.query.radiusKm) || 5; // default 5 km
-
-    // bounding box approx (fast filter)
-    const deg = radiusKm / 111; // ~111 km per degree latitude
-    const minLat = lat - deg, maxLat = lat + deg;
-    const minLng = lng - deg, maxLng = lng + deg;
-
-    const candidates = await Shop.find({
-      latitude: { $gte: minLat, $lte: maxLat },
-      longitude: { $gte: minLng, $lte: maxLng },
-    });
-
-    // Haversine distance
-    const toRad = (v) => (v * Math.PI) / 180;
-    const distKm = (lat1, lon1, lat2, lon2) => {
-      const R = 6371;
-      const dLat = toRad(lat2 - lat1);
-      const dLon = toRad(lon2 - lon1);
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
+    shop.businessType = businessType || shop.businessType;
+    shop.metadata = {
+      gstNumber: gstNumber || shop.metadata?.gstNumber,
+      fssaiLicense: fssaiLicense || shop.metadata?.fssaiLicense,
     };
-
-    const withDistance = candidates.map(s => {
-      const distance = (s.latitude != null && s.longitude != null)
-        ? distKm(lat, lng, s.latitude, s.longitude)
-        : Number.POSITIVE_INFINITY;
-      return { ...s._doc, distance };
-    });
-
-    // sort by distance ascending
-    withDistance.sort((a, b) => a.distance - b.distance);
-
-    res.json({ shops: withDistance });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: err.message });
+    if (typeof isActive !== "undefined") {
+      shop.isActive = isActive;
+    }
   }
-};
+
+  console.log("Saving shop...");
+  const savedShop = await shop.save();
+  console.log("Shop saved successfully");
+  res.json(savedShop);
+});
+
+// @desc    Get shop products
+// @route   GET /api/shop/products
+// @access  Private
+export const getProducts = asyncHandler(async (req, res) => {
+  // First find the shop owned by this user
+  const shop = await Shop.findOne({ owner: req.user.id });
+  if (!shop) {
+    return res.status(404).json({ message: "Shop not found" });
+  }
+
+  const products = await Product.find({ shop: shop._id }).select("-__v").lean();
+  res.json(products);
+});
+
+// @desc    Get shop orders
+// @route   GET /api/shop/orders
+// @access  Private
+export const getOrders = asyncHandler(async (req, res) => {
+  // First find the shop owned by this user
+  const shop = await Shop.findOne({ owner: req.user.id });
+  if (!shop) {
+    return res.status(404).json({ message: "Shop not found" });
+  }
+
+  const orders = await Order.find({ shop: shop._id })
+    .populate("products.product", "name price")
+    .select("-__v")
+    .lean();
+  res.json(orders);
+});
+
+// @desc    Get all available shops for customers
+// @route   GET /api/shop/available
+// @access  Private (customers)
+export const getAvailableShops = asyncHandler(async (req, res) => {
+  const shops = await Shop.find({ isActive: true })
+    .select("name businessType address contact businessHours metadata")
+    .populate("owner", "name email")
+    .lean();
+
+  // Filter out shops where owner is null (owner doesn't exist in database)
+  const validShops = shops.filter(shop => shop.owner !== null);
+
+  res.json({
+    shops: validShops,
+    count: validShops.length,
+  });
+});

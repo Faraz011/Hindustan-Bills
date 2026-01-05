@@ -26,6 +26,10 @@ const userSchema = new mongoose.Schema(
       enum: ["customer", "retailer", "admin"], // allowed roles
       default: "customer", // default if not specified
     },
+    profileCompleted: {
+      type: Boolean,
+      default: false,
+    },
     businessName: {
       type: String,
       required: false,

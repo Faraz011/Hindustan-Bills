@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { useForm } from 'react-hook-form';
-import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
-import toast from 'react-hot-toast';
-import {jwtDecode} from 'jwt-decode';
-import api from '../api/axios';
+import { useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
+import toast from "react-hot-toast";
+import { jwtDecode } from "jwt-decode";
+import api from "../api/axios";
 
 interface JwtPayload {
   id: string;
@@ -41,19 +41,19 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const {
     register,
     handleSubmit,
     watch,
-    formState: { errors }
+    formState: { errors },
   } = useForm<LoginForm>();
 
   const handleGoogleLogin = () => {
     const VITE_API_URL = import.meta.env.VITE_API_URL;
     if (!VITE_API_URL) {
-      console.error('VITE_API_URL is not defined');
-      toast.error('Configuration error. Please try again later.');
+      console.error("VITE_API_URL is not defined");
+      toast.error("Configuration error. Please try again later.");
       return;
     }
     window.location.href = `${VITE_API_URL}/api/auth/google`;
@@ -61,48 +61,50 @@ const Login = () => {
 
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
-    const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+    const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
 
     try {
       // 1. Authenticate to get the token
       const authRes = await api.post<AuthResponse>(endpoint, data);
       const { token } = authRes.data;
-      
+
       if (!token) {
-        throw new Error('No token received');
+        throw new Error("No token received");
       }
 
       // 2. Store the token
-      localStorage.setItem('token', token);
-      
+      localStorage.setItem("hb_token", token);
+
       // 3. Decode the token to get user info
       const decodedToken = jwtDecode<JwtPayload>(token);
-      console.log('Decoded token:', decodedToken);
+      console.log("Decoded token:", decodedToken);
 
       // 4. Store user data from token
       const userData = {
         id: decodedToken.id,
-        role: decodedToken.role
+        role: decodedToken.role,
       };
-      
-      localStorage.setItem('user', JSON.stringify(userData));
-      toast.success(isLogin ? 'Login successful!' : 'Registration successful!');
+
+      localStorage.setItem("user", JSON.stringify(userData));
+      toast.success(isLogin ? "Login successful!" : "Registration successful!");
 
       // 5. Redirect based on role
-      const redirectPath = decodedToken.role === 'retailer' 
-        ? '/dashboard' 
-        : '/customer-dashboard';
-      
-      console.log('Redirecting to:', redirectPath);
+      const redirectPath =
+        decodedToken.role === "retailer"
+          ? "/retailer/dashboard"
+          : "/customer/dashboard";
+
+      console.log("Redirecting to:", redirectPath);
       navigate(redirectPath, { replace: true });
-  } catch (err: any) {
-    const errorMessage = err.response?.data?.message || err.message || 'An error occurred';
-    toast.error(errorMessage);
-    console.error('Authentication error:', errorMessage);
-  } finally {
-    setIsLoading(false);
-  }
-};
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || err.message || "An error occurred";
+      toast.error(errorMessage);
+      console.error("Authentication error:", errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 relative overflow-hidden">
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
@@ -117,8 +119,8 @@ const Login = () => {
               onClick={() => setIsLogin(true)}
               className={`flex-1 py-4 font-medium text-center transition-colors ${
                 isLogin
-                  ? 'text-primary-600 border-b-2 border-primary-600'
-                  : 'text-gray-500 hover:bg-gray-50'
+                  ? "text-primary-600 border-b-2 border-primary-600"
+                  : "text-gray-500 hover:bg-gray-50"
               }`}
             >
               Sign In
@@ -127,8 +129,8 @@ const Login = () => {
               onClick={() => setIsLogin(false)}
               className={`flex-1 py-4 font-medium text-center transition-colors ${
                 !isLogin
-                  ? 'text-primary-600 border-b-2 border-primary-600'
-                  : 'text-gray-500 hover:bg-gray-50'
+                  ? "text-primary-600 border-b-2 border-primary-600"
+                  : "text-gray-500 hover:bg-gray-50"
               }`}
             >
               Create Account
@@ -179,7 +181,10 @@ const Login = () => {
               {!isLogin && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="firstName"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       First Name
                     </label>
                     <div className="relative">
@@ -189,24 +194,29 @@ const Login = () => {
                       <input
                         id="firstName"
                         type="text"
-                        {...register('firstName', { required: !isLogin })}
+                        {...register("firstName", { required: !isLogin })}
                         className="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         placeholder="John"
                         disabled={isLoading}
                       />
                     </div>
                     {errors.firstName && (
-                      <p className="mt-1 text-sm text-red-600">First name is required</p>
+                      <p className="mt-1 text-sm text-red-600">
+                        First name is required
+                      </p>
                     )}
                   </div>
                   <div>
-                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="lastName"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       Last Name
                     </label>
                     <input
                       id="lastName"
                       type="text"
-                      {...register('lastName')}
+                      {...register("lastName")}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       placeholder="Doe"
                       disabled={isLoading}
@@ -216,7 +226,10 @@ const Login = () => {
               )}
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Email address
                 </label>
                 <div className="relative">
@@ -226,12 +239,12 @@ const Login = () => {
                   <input
                     id="email"
                     type="email"
-                    {...register('email', {
-                      required: 'Email is required',
+                    {...register("email", {
+                      required: "Email is required",
                       pattern: {
                         value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                        message: 'Invalid email address'
-                      }
+                        message: "Invalid email address",
+                      },
                     })}
                     className="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     placeholder="you@example.com"
@@ -239,12 +252,17 @@ const Login = () => {
                   />
                 </div>
                 {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.email.message}
+                  </p>
                 )}
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Password
                 </label>
                 <div className="relative">
@@ -253,13 +271,13 @@ const Login = () => {
                   </div>
                   <input
                     id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    {...register('password', {
-                      required: 'Password is required',
+                    type={showPassword ? "text" : "password"}
+                    {...register("password", {
+                      required: "Password is required",
                       minLength: {
                         value: 6,
-                        message: 'Password must be at least 6 characters'
-                      }
+                        message: "Password must be at least 6 characters",
+                      },
                     })}
                     className="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     placeholder="••••••••"
@@ -279,13 +297,18 @@ const Login = () => {
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.password.message}
+                  </p>
                 )}
               </div>
 
               {!isLogin && (
                 <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="confirmPassword"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Confirm Password
                   </label>
                   <div className="relative">
@@ -294,10 +317,11 @@ const Login = () => {
                     </div>
                     <input
                       id="confirmPassword"
-                      type={showPassword ? 'text' : 'password'}
-                      {...register('confirmPassword', {
-                        validate: value =>
-                          value === watch('password') || 'Passwords do not match',
+                      type={showPassword ? "text" : "password"}
+                      {...register("confirmPassword", {
+                        validate: (value) =>
+                          value === watch("password") ||
+                          "Passwords do not match",
                       })}
                       className="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       placeholder="••••••••"
@@ -305,7 +329,9 @@ const Login = () => {
                     />
                   </div>
                   {errors.confirmPassword && (
-                    <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.confirmPassword.message}
+                    </p>
                   )}
                 </div>
               )}
@@ -314,20 +340,38 @@ const Login = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${
+                    isLoading ? "opacity-70 cursor-not-allowed" : ""
+                  }`}
                 >
                   {isLoading ? (
                     <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
                       </svg>
-                      {isLogin ? 'Signing in...' : 'Creating account...'}
+                      {isLogin ? "Signing in..." : "Creating account..."}
                     </>
                   ) : isLogin ? (
-                    'Sign in to your account'
+                    "Sign in to your account"
                   ) : (
-                    'Create account'
+                    "Create account"
                   )}
                 </button>
               </div>
@@ -335,14 +379,16 @@ const Login = () => {
 
             <div className="mt-6">
               <p className="text-center text-sm text-gray-600">
-                {isLogin ? "Don't have an account? " : 'Already have an account? '}
+                {isLogin
+                  ? "Don't have an account? "
+                  : "Already have an account? "}
                 <button
                   type="button"
                   onClick={() => setIsLogin(!isLogin)}
                   className="font-medium text-primary-600 hover:text-primary-500 focus:outline-none"
                   disabled={isLoading}
                 >
-                  {isLogin ? 'Sign up' : 'Sign in'}
+                  {isLogin ? "Sign up" : "Sign in"}
                 </button>
               </p>
             </div>

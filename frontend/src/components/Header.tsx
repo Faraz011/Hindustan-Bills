@@ -44,7 +44,7 @@
 //   }
 
 //   return (
-//     <motion.header 
+//     <motion.header
 //       className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md shadow-sm"
 //       initial={{ y: -100 }}
 //       animate={{ y: 0 }}
@@ -186,7 +186,7 @@
 //   }
 
 //   return (
-//     <motion.header 
+//     <motion.header
 //       id = "how it works"
 //       className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md shadow-sm"
 //       initial={{ y: -100 }}
@@ -282,11 +282,11 @@
 // }
 
 // export default Header
-import { useState, useEffect } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Menu, X, LogOut, User } from 'lucide-react'
-import { jwtDecode } from 'jwt-decode'
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Menu, X, LogOut, User } from "lucide-react";
+import { jwtDecode } from "jwt-decode";
 
 interface JwtPayload {
   id: string;
@@ -296,67 +296,67 @@ interface JwtPayload {
 }
 
 const Header = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [userRole, setUserRole] = useState<string | null>(null)
-  const location = useLocation()
-  const navigate = useNavigate()
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem("hb_token");
     if (token) {
       try {
-        const decoded = jwtDecode<JwtPayload>(token)
-        setUserRole(decoded.role)
-        setIsLoggedIn(true)
+        const decoded = jwtDecode<JwtPayload>(token);
+        setUserRole(decoded.role);
+        setIsLoggedIn(true);
       } catch (error) {
-        console.error('Error decoding token:', error)
-        handleLogout()
+        console.error("Error decoding token:", error);
+        handleLogout();
       }
     }
-  }, [])
+  }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    setIsLoggedIn(false)
-    setUserRole(null)
-    navigate('/')
-  }
+    localStorage.removeItem("hb_token");
+    localStorage.removeItem("user");
+    setIsLoggedIn(false);
+    setUserRole(null);
+    navigate("/");
+  };
 
   const navItems = [
-    { name: 'Home', path: '#home' },
-    { name: 'How It Works', path: '#howitworks' },
-    { name: 'Why Us?', path: '#features' },
-    { name: 'Contact Us', path: '/contact' },
-  ]
+    { name: "Home", path: "#home" },
+    { name: "How It Works", path: "#howitworks" },
+    { name: "Why Us?", path: "#features" },
+    { name: "Contact Us", path: "/contact" },
+  ];
 
   const smoothScroll = (selector: string) => {
     const element =
       document.querySelector(selector) ||
-      document.querySelector('#how-it-works') // fallback id
+      document.querySelector("#how-it-works"); // fallback id
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' })
-    } else if (selector === '#home') {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      element.scrollIntoView({ behavior: "smooth" });
+    } else if (selector === "#home") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
-  }
+  };
 
   const handleNavigation = (path: string) => {
-    if (path.startsWith('#')) {
+    if (path.startsWith("#")) {
       // Anchor navigation
-      if (location.pathname === '#home' || location.pathname === '/') {
-        setTimeout(() => smoothScroll(path), 150)
+      if (location.pathname === "#home" || location.pathname === "/") {
+        setTimeout(() => smoothScroll(path), 150);
       } else {
-        navigate('/')
-        setTimeout(() => smoothScroll(path), 600)
+        navigate("/");
+        setTimeout(() => smoothScroll(path), 600);
       }
     } else {
       // Regular page navigation
-      navigate(path)
+      navigate(path);
     }
-    setIsMenuOpen(false)
-  }
+    setIsMenuOpen(false);
+  };
 
   return (
     <motion.header
@@ -370,14 +370,14 @@ const Header = () => {
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
             <button
-              onClick={() => handleNavigation('#home')}
+              onClick={() => handleNavigation("#home")}
               className="flex items-center focus:outline-none"
             >
               <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden">
-                <img 
+                <img
                   src="/FUTUREOFBUSINESS.png"
-                  alt="Hindustan Bills Logo" 
-                  className="w-full h-full object-cover" 
+                  alt="Hindustan Bills Logo"
+                  className="w-full h-full object-cover"
                 />
               </div>
               <div className="ml-3 flex flex-col">
@@ -400,8 +400,8 @@ const Header = () => {
                   onClick={() => handleNavigation(item.path)}
                   className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     location.pathname === item.path
-                      ? 'bg-primary-50 text-primary-700'
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                      ? "bg-primary-50 text-primary-700"
+                      : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                   }`}
                 >
                   {item.name}
@@ -411,9 +411,9 @@ const Header = () => {
             <div className="ml-4 flex items-center md:ml-6">
               {isLoggedIn ? (
                 <div className="flex items-center space-x-4">
-                  {userRole === 'retailer' && (
+                  {userRole === "retailer" && (
                     <Link
-                      to="/dashboard"
+                      to="/retailer-dashboard"
                       className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                     >
                       <User size={16} className="mr-1.5" />
@@ -429,8 +429,8 @@ const Header = () => {
                   </button>
                 </div>
               ) : (
-                <Link 
-                  to="/login" 
+                <Link
+                  to="/login"
                   className="ml-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                 >
                   Log In
@@ -461,7 +461,7 @@ const Header = () => {
         {isMenuOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             className="md:hidden border-t border-gray-200"
           >
@@ -475,8 +475,8 @@ const Header = () => {
                   }}
                   className={`block w-full text-left px-4 py-2 text-base font-medium rounded-md ${
                     location.pathname === item.path
-                      ? 'bg-primary-50 text-primary-700'
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                      ? "bg-primary-50 text-primary-700"
+                      : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                   }`}
                 >
                   {item.name}
@@ -485,9 +485,9 @@ const Header = () => {
               <div className="pt-4 pb-3 border-t border-gray-200">
                 {isLoggedIn ? (
                   <div className="space-y-3 px-4">
-                    {userRole === 'retailer' && (
+                    {userRole === "retailer" && (
                       <Link
-                        to="/dashboard"
+                        to="/retailer/dashboard"
                         onClick={() => setIsMenuOpen(false)}
                         className="flex items-center px-4 py-2 text-base font-medium text-gray-700 rounded-md hover:bg-gray-100"
                       >
@@ -523,7 +523,7 @@ const Header = () => {
         )}
       </div>
     </motion.header>
-  )
-}
+  );
+};
 
-export default Header
+export default Header;

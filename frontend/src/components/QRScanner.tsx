@@ -1,71 +1,75 @@
-import { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { X, Camera, QrCode, CheckCircle } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { useEffect, useRef, useState } from 'react';
+import { Html5Qrcode } from 'html5-qrcode';
+import { X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 interface QRScannerProps {
-  isOpen: boolean
-  onClose: () => void
-  onScan: (result: string) => void
+  isOpen: boolean;
+  onClose: () => void;
+  onScan: (result: string) => void;
 }
 
-const QRScanner = ({ isOpen, onClose, onScan }: QRScannerProps) => {
-  const [isScanning, setIsScanning] = useState(false)
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null)
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const streamRef = useRef<MediaStream | null>(null)
+export default function QRScanner({ isOpen, onClose, onScan }: QRScannerProps) {
+  const [isScanning, setIsScanning] = useState(false);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
 
   useEffect(() => {
-    if (isOpen) {
-      startCamera()
-    } else {
-      stopCamera()
-    }
-  }, [isOpen])
+    if (!isOpen) return;
 
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'environment' // Use back camera on mobile
-        } 
-      })
-      setHasPermission(true)
-      setIsScanning(true)
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        streamRef.current = stream
+    const initScanner = async () => {
+      try {
+        const scanner = new Html5Qrcode('qr-reader');
+        scannerRef.current = scanner;
+
+        const cameras = await Html5Qrcode.getCameras();
+        if (cameras && cameras.length) {
+          const cameraId = cameras.length > 1 ? cameras[1].id : cameras[0].id;
+          
+          await scanner.start(
+            cameraId,
+            {
+              fps: 10,
+              qrbox: { width: 250, height: 250 }
+            },
+            (decodedText) => {
+              onScan(decodedText);
+              stopScanner();
+              onClose();
+            },
+            (errorMessage) => {
+              if (!errorMessage.includes('No QR code found')) {
+                console.error('QR scan error:', errorMessage);
+              }
+            }
+          );
+          
+          setIsScanning(true);
+        } else {
+          throw new Error('No cameras found');
+        }
+      } catch (error) {
+        console.error('Scanner initialization error:', error);
+        toast.error('Failed to initialize scanner. Please check camera permissions.');
       }
-    } catch (error) {
-      console.error('Error accessing camera:', error)
-      setHasPermission(false)
-      toast.error('Camera access denied. Please allow camera permission.')
-    }
-  }
+    };
 
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop())
-      streamRef.current = null
-    }
-    setIsScanning(false)
-  }
+    const stopScanner = () => {
+      if (scannerRef.current?.isScanning) {
+        scannerRef.current.stop().catch(console.error);
+        scannerRef.current = null;
+        setIsScanning(false);
+      }
+    };
 
-  const handleClose = () => {
-    stopCamera()
-    onClose()
-  }
+    initScanner();
 
-  const simulateQRScan = () => {
-    // Simulate QR code detection
-    const mockQRData = 'https://hindustanbills.com/scan?product=123&store=456'
-    onScan(mockQRData)
-    toast.success('QR Code scanned successfully!')
-    handleClose()
-  }
+    return () => {
+      stopScanner();
+    };
+  }, [isOpen, onClose, onScan]);
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <AnimatePresence>
@@ -85,91 +89,68 @@ const QRScanner = ({ isOpen, onClose, onScan }: QRScannerProps) => {
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                <QrCode className="w-5 h-5 text-primary-600" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-primary-600"
+                >
+                  <rect x="3" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="14" width="7" height="7"></rect>
+                  <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">QR Scanner</h3>
-                <p className="text-sm text-gray-600">Scan a QR code to continue</p>
+                <p className="text-sm text-gray-600">
+                  {isScanning ? 'Scan a QR code' : 'Initializing scanner...'}
+                </p>
               </div>
             </div>
             <button
-              onClick={handleClose}
+              onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200"
+              aria-label="Close scanner"
             >
               <X className="w-5 h-5 text-gray-500" />
             </button>
           </div>
 
           {/* Scanner Area */}
-          <div className="p-6">
-            {hasPermission === false ? (
-              <div className="text-center py-12">
-                <Camera className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">Camera Access Required</h4>
-                <p className="text-gray-600 mb-6">
-                  Please allow camera permission to scan QR codes
-                </p>
-                <button
-                  onClick={startCamera}
-                  className="btn-primary"
-                >
-                  Try Again
-                </button>
-              </div>
-            ) : (
-              <div className="relative">
-                <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden mb-4">
-                  {isScanning ? (
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <div className="text-center">
-                        <QrCode className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-600">Camera starting...</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Scanner Overlay */}
-                <div className="absolute inset-0 pointer-events-none">
-                  <div className="w-full h-full flex items-center justify-center">
-                    <div className="w-48 h-48 border-2 border-primary-500 rounded-xl relative">
-                      <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-primary-500 rounded-tl-lg"></div>
-                      <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-primary-500 rounded-tr-lg"></div>
-                      <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-primary-500 rounded-bl-lg"></div>
-                      <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-primary-500 rounded-br-lg"></div>
-                    </div>
+          <div className="relative p-4">
+            <div id="qr-reader" className="w-full h-64 md:h-96 relative">
+              {!isScanning && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="animate-pulse text-gray-500">
+                    Loading scanner...
                   </div>
                 </div>
-
-                {/* Instructions */}
-                <div className="text-center">
-                  <p className="text-sm text-gray-600 mb-4">
-                    Position the QR code within the frame
-                  </p>
-                  
-                  {/* Simulate Scan Button for Demo */}
-                  <button
-                    onClick={simulateQRScan}
-                    className="btn-primary flex items-center justify-center mx-auto"
-                  >
-                    <CheckCircle className="w-5 h-5 mr-2" />
-                    Simulate Scan (Demo)
-                  </button>
+              )}
+              
+              {/* Scanner frame overlay */}
+              <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                <div className="relative w-64 h-64 border-2 border-primary-500 rounded-lg">
+                  <div className="absolute -top-1 -left-1 w-8 h-8 border-t-2 border-l-2 border-primary-500 rounded-tl-lg"></div>
+                  <div className="absolute -top-1 -right-1 w-8 h-8 border-t-2 border-r-2 border-primary-500 rounded-tr-lg"></div>
+                  <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-2 border-l-2 border-primary-500 rounded-bl-lg"></div>
+                  <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-2 border-r-2 border-primary-500 rounded-br-lg"></div>
                 </div>
               </div>
-            )}
+            </div>
+            
+            <div className="mt-4 p-4 bg-gray-50 text-center text-sm text-gray-600 rounded-b-lg">
+              Position the QR code within the frame to scan
+            </div>
           </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>
-  )
+  );
 }
-
-export default QRScanner

@@ -1,13 +1,27 @@
+// src/routes/cartRoutes.js
 import express from "express";
-import { verifyToken, authorizeRoles } from "../middleware/authMiddleware.js";
-import { addToCart, getCart, removeFromCart, updateCartItem } from "../controllers/cartController.js";
+import { protect, authorizeRoles } from "../middleware/authMiddleware.js";
+import {
+  addToCart,
+  getCart,
+  updateCartItem,
+  removeFromCart,
+  initializeSession,
+  convertSessionToCart,
+} from "../controllers/cartController.js";
 
 const router = express.Router();
 
-// Only customers can manage cart
-router.post("/add", verifyToken, authorizeRoles("customer"), addToCart);
-router.get("/", verifyToken, authorizeRoles("customer"), getCart);
-router.post("/remove", verifyToken, authorizeRoles("customer"), removeFromCart);
-router.put("/update", verifyToken, authorizeRoles("customer"), updateCartItem);
+// Protect all routes
+router.use(protect);
+
+// Session management
+router.post("/initialize", initializeSession);
+router.post("/convert-session", convertSessionToCart);
+
+// Cart CRUD operations
+router.route("/").get(getCart).post(addToCart);
+
+router.route("/:productId").put(updateCartItem).delete(removeFromCart);
 
 export default router;

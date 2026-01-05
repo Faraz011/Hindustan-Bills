@@ -1,100 +1,134 @@
 import Product from "../models/Product.js";
+import Shop from "../models/Shop.js";
+import asyncHandler from "express-async-handler";
 
-//Add a new product (retailer only)
-export const addProduct = async (req, res) => {
-  try {
-    const { name, price, barcode } = req.body;
-
-    if (!name || !price || !barcode) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-
-    const product = await Product.create({
-      name,
-      price,
-      barcode,
-      addedBy: req.user.id, // store which retailer added it
-    });
-
-    res.status(201).json({ message: "Product added successfully", product });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+// @desc    Get all products for a shop
+// @route   GET /api/products
+// @access  Private
+export const getProducts = asyncHandler(async (req, res) => {
+  // Find the shop owned by the current user
+  const shop = await Shop.findOne({ owner: req.user.id });
+  if (!shop) {
+    return res.status(404).json({ message: "Shop not found" });
   }
-};
 
-//Get all products (public)
-export const getProducts = async (req, res) => {
-  try {
-    const products = await Product.find().sort({ createdAt: -1 });
-    res.json(products);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  const products = await Product.find({ shop: shop._id })
+    .select("-__v")
+    .sort({ createdAt: -1 })
+    .lean();
+
+  res.json(products);
+});
+
+// @desc    Create a new product
+// @route   POST /api/products
+// @access  Private
+export const createProduct = asyncHandler(async (req, res) => {
+  console.log(`Creating product for user ${req.user.id}`);
+  
+  // Find the shop owned by the current user
+  const shop = await Shop.findOne({ owner: req.user.id });
+  console.log(`Shop found for user ${req.user.id}:`, shop ? shop._id : 'No shop found');
+  
+  if (!shop) {
+    return res.status(404).json({ message: "Shop not found. Please complete your shop setup first." });
   }
-};
 
-//Get product by barcode (public)
-export const getProductByBarcode = async (req, res) => {
-  try {
-    const { barcode } = req.params;
+  const { name, description, price, category, stock, imageUrl, barcode, sku } =
+    req.body;
 
-    const product = await Product.findOne({ barcode });
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-
-    res.json(product);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  // Validate required fields
+  if (!name || !price) {
+    return res.status(400).json({ message: "Name and price are required" });
   }
-};
 
-//Update a product (retailer only)
-export const updateProduct = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, price, barcode } = req.body;
+  const product = await Product.create({
+    name,
+    description,
+    price,
+    category: category || "General",
+    stock: stock || 0,
+    image: imageUrl || "/placeholder-product.png",
+    shop: shop._id,
+    metadata: {
+      barcode: barcode || undefined, // Ensure barcode is not null
+      sku: sku || undefined,
+    },
+  });
 
-    const product = await Product.findById(id);
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
+  res.status(201).json(product);
+});
 
-    //Only the retailer who added the product can update it
-    if (product.addedBy.toString() !== req.user.id) {
-      return res.status(403).json({ message: "You are not authorized to update this product" });
-    }
-
-    if (name) product.name = name;
-    if (price) product.price = price;
-    if (barcode) product.barcode = barcode;
-
-    await product.save();
-
-    res.json({ message: "Product updated successfully", product });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+// @desc    Update a product
+// @route   PUT /api/products/:id
+// @access  Private
+export const updateProduct = asyncHandler(async (req, res) => {
+  // Find the shop owned by the current user
+  const shop = await Shop.findOne({ owner: req.user.id });
+  if (!shop) {
+    return res.status(404).json({ message: "Shop not found" });
   }
-};
 
-//Delete a product (retailer only)
-export const deleteProduct = async (req, res) => {
-  try {
-    const { id } = req.params;
+  const product = await Product.findOne({
+    _id: req.params.id,
+    shop: shop._id,
+  });
 
-    const product = await Product.findById(id);
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-
-    // Only the retailer who added the product can delete it
-    if (product.addedBy.toString() !== req.user.id) {
-      return res.status(403).json({ message: "You are not authorized to delete this product" });
-    }
-
-    await Product.findByIdAndDelete(id);
-
-    res.json({ message: "Product deleted successfully" });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  if (!product) {
+    res.status(404);
+    throw new Error("Product not found");
   }
-};
+
+  const {
+    name,
+    description,
+    price,
+    category,
+    stock,
+    imageUrl,
+    barcode,
+    sku,
+    isActive,
+  } = req.body;
+
+  product.name = name || product.name;
+  product.description = description || product.description;
+  if (price !== undefined) product.price = price;
+  if (category) product.category = category;
+  if (stock !== undefined) product.stock = stock;
+  if (imageUrl) product.image = imageUrl;
+  if (isActive !== undefined) product.isActive = isActive;
+
+  // Update metadata
+  product.metadata = {
+    ...product.metadata,
+    ...(barcode !== undefined && { barcode }),
+    ...(sku !== undefined && { sku }),
+  };
+
+  const updatedProduct = await product.save();
+  res.json(updatedProduct);
+});
+
+// @desc    Delete a product
+// @route   DELETE /api/shop/products/:id
+// @access  Private
+export const deleteProduct = asyncHandler(async (req, res) => {
+  // Find the shop owned by the current user
+  const shop = await Shop.findOne({ owner: req.user.id });
+  if (!shop) {
+    return res.status(404).json({ message: "Shop not found" });
+  }
+
+  const product = await Product.findOneAndDelete({
+    _id: req.params.id,
+    shop: shop._id,
+  });
+
+  if (!product) {
+    res.status(404);
+    throw new Error("Product not found");
+  }
+
+  res.json({ message: "Product removed" });
+});

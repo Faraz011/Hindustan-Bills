@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import User from "../models/User.js";
+import Shop from "../models/Shop.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import passport from "passport";
@@ -38,6 +39,7 @@ passport.use(
           email: profile.emails[0].value,
           googleId: profile.id,
           role: "customer", // Default role, will be updated later
+          profileCompleted: false, // New user needs to complete profile
         });
 
         return done(null, user);
@@ -95,7 +97,7 @@ export const login = async (req, res) => {
 
     // Create JWT — includes role
     const token = jwt.sign(
-      { id: user._id, role: user.role }, 
+      { id: user._id, name: user.name, email: user.email, role: user.role, profileCompleted: user.profileCompleted },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -119,7 +121,7 @@ export const googleAuthSuccess = async (req, res) => {
   try {
     const user = req.user;
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      { id: user._id, name: user.name, email: user.email, role: user.role, profileCompleted: user.profileCompleted },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -138,7 +140,7 @@ export const updateProfile = async (req, res) => {
     const { role, businessName, businessType } = req.body;
     const userId = req.user.id; // From auth middleware
 
-    const updateData = { role };
+    const updateData = { role, profileCompleted: true };
     if (role === "retailer" && businessName && businessType) {
       updateData.businessName = businessName;
       updateData.businessType = businessType;
@@ -149,7 +151,44 @@ export const updateProfile = async (req, res) => {
     });
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    res.json({ message: "Profile updated successfully", user });
+    // If user is a retailer, create a shop if it doesn't exist
+    if (role === "retailer" && businessName && businessType) {
+      const existingShop = await Shop.findOne({ owner: userId });
+      if (!existingShop) {
+        console.log(`Creating shop for retailer ${userId}: ${businessName}, ${businessType}`);
+        const shop = await Shop.create({
+          owner: userId,
+          name: businessName,
+          businessType: businessType,
+          address: {
+            street: "To be updated",
+            city: "To be updated", 
+            state: "To be updated",
+            pincode: "000000",
+            country: "India",
+            coordinates: {
+              type: "Point",
+              coordinates: [0, 0], // Default coordinates
+            },
+          },
+          contact: {
+            email: user.email,
+          },
+        });
+        console.log("Created shop for retailer:", shop._id);
+      } else {
+        console.log(`Shop already exists for retailer ${userId}`);
+      }
+    }
+
+    // Generate new token with updated role
+    const token = jwt.sign(
+      { id: user._id, name: user.name, email: user.email, role: user.role, profileCompleted: user.profileCompleted },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({ message: "Profile updated successfully", user, token });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
