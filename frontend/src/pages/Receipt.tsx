@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+
+const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 import { useParams } from "react-router-dom";
 
 type ReceiptItem = {
@@ -20,7 +22,7 @@ const Receipt = () => {
   useEffect(() => {
     if (!id) return;
 
-    fetch(`http://localhost:5000/api/receipt/${id}`)
+    fetch(`${API_BASE}/api/receipt/${id}`)
       .then(async (res) => {
         if (!res.ok) {
           throw new Error("Failed to fetch receipt");
@@ -49,8 +51,7 @@ const Receipt = () => {
           <ul className="mb-4">
             {receipt.items.map((item, index) => (
               <li key={index}>
-                {item.name} × {item.quantity} = ₹
-                {item.price * item.quantity}
+                {item.name} × {item.quantity} = ₹{item.price * item.quantity}
               </li>
             ))}
           </ul>

@@ -8,6 +8,8 @@ import React, {
 import Quagga from "@ericblade/quagga2";
 import toast from "react-hot-toast";
 
+// Use configured API base (VITE_API_URL) when available (production).
+const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 interface ScannedProduct {
   _id: string;
   barcode: string;
@@ -142,11 +144,11 @@ export default function BarcodeScanner({
     try {
       console.log(`🔍 Fetching product for barcode: ${barcode}`);
 
-      const url = shopId
+      const relative = shopId
         ? `/api/barcode/scan/${barcode}?shopId=${shopId}`
         : `/api/barcode/scan/${barcode}`;
 
-      const response = await fetch(url, {
+      const response = await fetch(`${API_BASE}${relative}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("hb_token")}`,
         },

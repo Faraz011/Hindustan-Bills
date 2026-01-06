@@ -75,8 +75,8 @@
 //   const addToCart = (product: Product) => {
 //     const existingItem = cart.find(item => item.id === product.id)
 //     if (existingItem) {
-//       setCart(cart.map(item => 
-//         item.id === product.id 
+//       setCart(cart.map(item =>
+//         item.id === product.id
 //           ? { ...item, quantity: item.quantity + 1 }
 //           : item
 //       ))
@@ -95,8 +95,8 @@
 //     if (quantity === 0) {
 //       removeFromCart(productId)
 //     } else {
-//       setCart(cart.map(item => 
-//         item.id === productId 
+//       setCart(cart.map(item =>
+//         item.id === productId
 //           ? { ...item, quantity }
 //           : item
 //       ))
@@ -135,7 +135,7 @@
 //             <p className="text-xl text-gray-600 leading-relaxed mb-8">
 //               Browse and select from our wide range of fresh products. Add items to your cart and checkout seamlessly.
 //             </p>
-            
+
 //             {/* Cart Button */}
 //             <div className="flex justify-center">
 //               <button
@@ -172,7 +172,7 @@
 //                     {product.category}
 //                   </span>
 //                 </div>
-                
+
 //                 <div className="flex items-center justify-between mb-4">
 //                   <span className="text-2xl font-bold text-gray-900">₹{product.price}</span>
 //                   <button
@@ -230,7 +230,7 @@
 //                           <p className="text-sm text-gray-600">₹{item.price} each</p>
 //                         </div>
 //                       </div>
-                      
+
 //                       <div className="flex items-center space-x-3">
 //                         <button
 //                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
@@ -289,7 +289,7 @@
 //             className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6"
 //           >
 //             <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">Choose Payment Method</h3>
-            
+
 //             <div className="space-y-4">
 //               <button
 //                 onClick={() => handlePayment('UPI')}
@@ -298,7 +298,7 @@
 //                 <QrCode className="w-6 h-6 mr-3 text-primary-600" />
 //                 <span className="font-semibold">Pay with UPI</span>
 //               </button>
-              
+
 //               <button
 //                 onClick={() => handlePayment('Credit Card')}
 //                 className="w-full p-4 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center"
@@ -306,7 +306,7 @@
 //                 <CreditCard className="w-6 h-6 mr-3 text-gray-600" />
 //                 <span className="font-semibold">Credit/Debit Card</span>
 //               </button>
-              
+
 //               <button
 //                 onClick={() => handlePayment('Cash')}
 //                 className="w-full p-4 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center"
@@ -315,7 +315,7 @@
 //                 <span className="font-semibold">Cash on Delivery</span>
 //               </button>
 //             </div>
-            
+
 //             <button
 //               onClick={() => setShowPayment(false)}
 //               className="w-full mt-4 text-gray-600 hover:text-gray-800"
@@ -330,8 +330,8 @@
 // }
 
 // export default Products
-import { useEffect, useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ShoppingCart,
   Plus,
@@ -340,104 +340,104 @@ import {
   QrCode,
   ArrowRight,
   CheckCircle2,
-} from "lucide-react"
-import toast from "react-hot-toast"
+} from "lucide-react";
+import toast from "react-hot-toast";
 
-import StoreDetector from "../components/StoreDetector"
-import { getProducts } from "../lib/api"
-import type { Product } from "../lib/api"
+import StoreDetector from "../components/StoreDetector";
+import { getProducts } from "../lib/api";
+import type { Product } from "../lib/api";
 
 /* ================= TYPES ================= */
 
 // Cart must ALWAYS have _id
 interface CartItem extends Product {
-  _id: string
-  quantity: number
+  _id: string;
+  quantity: number;
 }
 
 /* ================= COMPONENT ================= */
 
 const Products = () => {
-  const [products, setProducts] = useState<Product[]>([])
-  const [cart, setCart] = useState<CartItem[]>([])
-  const [showCart, setShowCart] = useState(false)
+  const [products, setProducts] = useState<Product[]>([]);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [showCart, setShowCart] = useState(false);
   const [step, setStep] = useState<"cart" | "checkout" | "payment" | "success">(
     "cart"
-  )
-  const [currentShop, setCurrentShop] = useState<{ _id: string } | null>(null)
+  );
+  const [currentShop, setCurrentShop] = useState<{ _id: string } | null>(null);
 
   /* ================= USER / ROLE ================= */
 
-  const user = JSON.parse(localStorage.getItem("user") || "{}")
-  const isRetailer = user?.role === "retailer"
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isRetailer = user?.role === "retailer";
 
   /* ================= AUTO-SET SHOP FOR RETAILER ================= */
 
   useEffect(() => {
     if (isRetailer && user?.shopId) {
-      setCurrentShop({ _id: user.shopId })
+      setCurrentShop({ _id: user.shopId });
     }
-  }, [isRetailer, user?.shopId])
+  }, [isRetailer, user?.shopId]);
 
   /* ================= FETCH PRODUCTS ================= */
 
   useEffect(() => {
     if (!currentShop?._id) {
-      setProducts([])
-      return
+      setProducts([]);
+      return;
     }
 
     getProducts(currentShop._id)
       .then((data) => setProducts(data))
-      .catch(() => toast.error("Failed to load products"))
-  }, [currentShop])
+      .catch(() => toast.error("Failed to load products"));
+  }, [currentShop]);
 
   /* ================= CART LOGIC ================= */
 
   const addToCart = (product: Product) => {
-    if (!product._id) return
+    if (!product._id) return;
 
     setCart((prev) => {
-      const existing = prev.find((i) => i._id === product._id)
+      const existing = prev.find((i) => i._id === product._id);
       if (existing) {
         return prev.map((i) =>
-          i._id === product._id
-            ? { ...i, quantity: i.quantity + 1 }
-            : i
-        )
+          i._id === product._id ? { ...i, quantity: i.quantity + 1 } : i
+        );
       }
-      return [...prev, { ...(product as CartItem), quantity: 1 }]
-    })
+      return [...prev, { ...(product as CartItem), quantity: 1 }];
+    });
 
-    toast.success(`${product.name} added to cart`)
-  }
+    toast.success(`${product.name} added to cart`);
+  };
 
   const removeFromCart = (id: string) => {
-    setCart((prev) => prev.filter((i) => i._id !== id))
-  }
+    setCart((prev) => prev.filter((i) => i._id !== id));
+  };
 
   const updateQuantity = (id: string, q: number) => {
-    if (q <= 0) removeFromCart(id)
+    if (q <= 0) removeFromCart(id);
     else
       setCart((prev) =>
         prev.map((i) => (i._id === id ? { ...i, quantity: q } : i))
-      )
-  }
+      );
+  };
 
-  const total = cart.reduce((sum, i) => sum + i.price * i.quantity, 0)
+  const total = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
   const handleProceed = () => {
-    if (step === "cart") setStep("checkout")
-    else if (step === "checkout") setStep("payment")
-  }
+    if (step === "cart") setStep("checkout");
+    else if (step === "checkout") setStep("payment");
+  };
 
   /* ================= PAYMENT + RECEIPT ================= */
 
   const handlePayment = async (method: string) => {
     try {
-      setStep("success")
+      setStep("success");
 
-      const res = await fetch("http://localhost:5000/api/checkout", {
+      const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+
+      const res = await fetch(`${API_BASE}/api/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -449,22 +449,22 @@ const Products = () => {
           })),
           paymentMethod: method,
         }),
-      })
+      });
 
-      const data = await res.json()
+      const data = await res.json();
 
-      toast.success(`Payment successful via ${method}`)
-      setCart([])
-      setShowCart(false)
-      setStep("cart")
+      toast.success(`Payment successful via ${method}`);
+      setCart([]);
+      setShowCart(false);
+      setStep("cart");
 
       // Redirect to receipt verification
-      window.location.href = `/receipt/${data.receiptId}`
+      window.location.href = `/receipt/${data.receiptId}`;
     } catch {
-      toast.error("Payment failed")
-      setStep("payment")
+      toast.error("Payment failed");
+      setStep("payment");
     }
-  }
+  };
 
   /* ================= UI ================= */
 
@@ -472,7 +472,10 @@ const Products = () => {
     <div className="pt-20">
       {/* HEADER */}
       <section className="section-padding text-center">
-        <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
           <h1 className="text-5xl font-bold mb-4">
             Store <span className="text-primary-600">Products</span>
           </h1>
@@ -623,9 +626,7 @@ const Products = () => {
                 {step === "success" && (
                   <div className="text-center py-10">
                     <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                    <h3 className="text-2xl font-bold">
-                      Payment Successful
-                    </h3>
+                    <h3 className="text-2xl font-bold">Payment Successful</h3>
                   </div>
                 )}
               </div>
@@ -645,7 +646,7 @@ const Products = () => {
         )}
       </AnimatePresence>
     </div>
-  )
-}
+  );
+};
 
-export default Products
+export default Products;

@@ -126,13 +126,44 @@ export const getOrders = asyncHandler(async (req, res) => {
 // @route   GET /api/shop/available
 // @access  Private (customers)
 export const getAvailableShops = asyncHandler(async (req, res) => {
+  console.log("getAvailableShops called");
+
+  const allShops = await Shop.find({})
+    .select("name businessType isActive owner")
+    .populate("owner", "name email")
+    .lean();
+
+  console.log(
+    "All shops in database:",
+    allShops.map((shop) => ({
+      name: shop.name,
+      isActive: shop.isActive,
+      owner: shop.owner,
+    }))
+  );
+
   const shops = await Shop.find({ isActive: true })
     .select("name businessType address contact businessHours metadata")
     .populate("owner", "name email")
     .lean();
 
+  console.log("Active shops found:", shops.length);
+  console.log(
+    "Active shops:",
+    shops.map((shop) => ({
+      name: shop.name,
+      owner: shop.owner,
+    }))
+  );
+
   // Filter out shops where owner is null (owner doesn't exist in database)
   const validShops = shops.filter((shop) => shop.owner !== null);
+
+  console.log("Valid shops after owner filter:", validShops.length);
+  console.log(
+    "Valid shops:",
+    validShops.map((shop) => shop.name)
+  );
 
   res.json({
     shops: validShops,

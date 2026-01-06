@@ -1,39 +1,41 @@
-import { motion } from "framer-motion"
-import { useState } from "react"
-import { CreditCard, QrCode, Truck, CheckCircle } from "lucide-react"
-import toast from "react-hot-toast"
-import PaymentStep from "./PaymentStep"
-import { useNavigate } from "react-router-dom"
+import { motion } from "framer-motion";
+import { useState } from "react";
+import { CreditCard, QrCode, Truck, CheckCircle } from "lucide-react";
+import toast from "react-hot-toast";
+import PaymentStep from "./PaymentStep";
+import { useNavigate } from "react-router-dom";
 
-const navigate = useNavigate()
+const navigate = useNavigate();
 
 interface CartItem {
-  id: number
-  name: string
-  price: number
-  quantity: number
-  image: string
+  id: number;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
 }
 
 interface CheckoutModalProps {
-  cart: CartItem[]
-  onClose: () => void
-  onSuccess: () => void
+  cart: CartItem[];
+  onClose: () => void;
+  onSuccess: () => void;
 }
 
 const CheckoutModal = ({ cart, onClose, onSuccess }: CheckoutModalProps) => {
-  const [step, setStep] = useState(1)
-  const [method, setMethod] = useState<string>("")
-  const total = cart.reduce((t, i) => t + i.price * i.quantity, 0)
+  const [step, setStep] = useState(1);
+  const [method, setMethod] = useState<string>("");
+  const total = cart.reduce((t, i) => t + i.price * i.quantity, 0);
+
+  const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
   const handlePayment = async (selectedMethod: string) => {
     try {
-      setMethod(selectedMethod)
-      setStep(3)
+      setMethod(selectedMethod);
+      setStep(3);
 
       // simulate payment delay
       setTimeout(async () => {
-        const res = await fetch("http://localhost:5000/api/checkout", {
+        const res = await fetch(`${API_BASE}/api/checkout`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -45,23 +47,22 @@ const CheckoutModal = ({ cart, onClose, onSuccess }: CheckoutModalProps) => {
             })),
             paymentMethod: selectedMethod,
           }),
-        })
+        });
 
-        const data = await res.json()
+        const data = await res.json();
 
-        toast.success(`Payment successful via ${selectedMethod}`)
+        toast.success(`Payment successful via ${selectedMethod}`);
 
-        onClose()
+        onClose();
 
         // 👉 REDIRECT TO RECEIPT (verification page)
-        navigate(`/receipt/${data.receiptId}`)
-      }, 1500)
+        navigate(`/receipt/${data.receiptId}`);
+      }, 1500);
     } catch (err) {
-      toast.error("Payment failed")
-      setStep(2)
+      toast.error("Payment failed");
+      setStep(2);
     }
-  }
-
+  };
 
   return (
     <motion.div
@@ -122,10 +123,7 @@ const CheckoutModal = ({ cart, onClose, onSuccess }: CheckoutModalProps) => {
         )}
 
         {step === 2 && (
-          <PaymentStep
-            onSelect={handlePayment}
-            onBack={() => setStep(1)}
-          />
+          <PaymentStep onSelect={handlePayment} onBack={() => setStep(1)} />
         )}
 
         {step === 3 && (
@@ -144,17 +142,14 @@ const CheckoutModal = ({ cart, onClose, onSuccess }: CheckoutModalProps) => {
             <p className="text-gray-600 mb-6">
               Thank you for shopping with us.
             </p>
-            <button
-              onClick={onClose}
-              className="btn-primary w-full"
-            >
+            <button onClick={onClose} className="btn-primary w-full">
               Close
             </button>
           </div>
         )}
       </motion.div>
     </motion.div>
-  )
-}
+  );
+};
 
-export default CheckoutModal
+export default CheckoutModal;

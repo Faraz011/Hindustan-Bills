@@ -24,7 +24,9 @@ const Checkout: React.FC<CheckoutProps> = ({ cart }) => {
   const checkout = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:5000/api/checkout", {
+      const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+
+      const res = await fetch(`${API_BASE}/api/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ items: cart }),
@@ -50,9 +52,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cart }) => {
         Confirm (Mock Payment)
       </button>
 
-      {qr && (
-        <img src={qr} alt="QR Code" className="mt-6 w-48" />
-      )}
+      {qr && <img src={qr} alt="QR Code" className="mt-6 w-48" />}
     </div>
   );
 };

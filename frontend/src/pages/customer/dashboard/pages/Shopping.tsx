@@ -4,6 +4,9 @@ import BarcodeScanner from "../components/BarcodeScanner";
 import Cart from "./Cart";
 import toast from "react-hot-toast";
 
+// Use configured API base (VITE_API_URL) when available (production).
+const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+
 interface ScannedProduct {
   _id: string;
   barcode: string;
@@ -68,11 +71,14 @@ export default function ScannerPage() {
 
   const loadSessionProducts = async () => {
     try {
-      const response = await fetch(`/api/barcode/session/${sessionCode}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("hb_token")}`,
-        },
-      });
+      const response = await fetch(
+        `${API_BASE}/api/barcode/session/${sessionCode}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("hb_token")}`,
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -101,7 +107,7 @@ export default function ScannerPage() {
 
   const initializeSession = async () => {
     try {
-      const response = await fetch("/api/cart/initialize", {
+      const response = await fetch(`${API_BASE}/api/cart/initialize`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -152,7 +158,7 @@ export default function ScannerPage() {
       }
 
       // Real API call for non-mock products
-      const response = await fetch("/api/barcode/scan", {
+      const response = await fetch(`${API_BASE}/api/barcode/scan`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -192,7 +198,7 @@ export default function ScannerPage() {
   const updateQuantity = async (scannedProductId: string, quantity: number) => {
     try {
       const response = await fetch(
-        `/api/barcode/session/${sessionCode}/${scannedProductId}`,
+        `${API_BASE}/api/barcode/session/${sessionCode}/${scannedProductId}`,
         {
           method: "PUT",
           headers: {
@@ -225,7 +231,7 @@ export default function ScannerPage() {
   const removeItem = async (scannedProductId: string) => {
     try {
       const response = await fetch(
-        `/api/barcode/session/${sessionCode}/${scannedProductId}`,
+        `${API_BASE}/api/barcode/session/${sessionCode}/${scannedProductId}`,
         {
           method: "DELETE",
           headers: {
@@ -253,16 +259,19 @@ export default function ScannerPage() {
   const handleCheckout = async () => {
     try {
       // First convert session to cart
-      const convertResponse = await fetch("/api/cart/convert-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("hb_token")}`,
-        },
-        body: JSON.stringify({
-          sessionCode,
-        }),
-      });
+      const convertResponse = await fetch(
+        `${API_BASE}/api/cart/convert-session`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("hb_token")}`,
+          },
+          body: JSON.stringify({
+            sessionCode,
+          }),
+        }
+      );
 
       if (!convertResponse.ok) {
         const errorText = await convertResponse.text();
@@ -274,7 +283,7 @@ export default function ScannerPage() {
       }
 
       // Now proceed with checkout using the cart
-      const checkoutResponse = await fetch("/api/orders/order", {
+      const checkoutResponse = await fetch(`${API_BASE}/api/orders/order`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
