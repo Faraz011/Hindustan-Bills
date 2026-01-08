@@ -8,8 +8,9 @@ import React, {
 import Quagga from "@ericblade/quagga2";
 import toast from "react-hot-toast";
 
-// Use configured API base (VITE_API_URL) when available (production).
+
 const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+
 interface ScannedProduct {
   _id: string;
   barcode: string;
@@ -27,6 +28,12 @@ interface BarcodeScannerProps {
   shopId?: string;
 }
 
+interface BarcodeDetection {
+  code: string;
+  confidence: number;
+  timestamp: number;
+}
+
 export default function BarcodeScanner({
   onProductDetected,
   onError,
@@ -36,38 +43,173 @@ export default function BarcodeScanner({
   const [detectedBarcode, setDetectedBarcode] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<{
+    lastConfidence: number;
+    framesProcessed: number;
+  }>({ lastConfidence: 0, framesProcessed: 0 });
+
   const videoRef = useRef<HTMLDivElement>(null);
-  const scannedBarcodesRef = useRef<Set<string>>(new Set()); // Prevent duplicate scans
-
-  // Handle detected barcode
-  const handleBarcodeDetected = useCallback(async (result: any) => {
-    if (!result || !result.codeResult) return;
-
-    const barcode = result.codeResult.code;
-
-    // Skip if already scanned recently (prevent duplicates)
-    if (scannedBarcodesRef.current.has(barcode)) {
-      return;
+  
+  
+  const detectionHistoryRef = useRef<BarcodeDetection[]>([]);
+  
+  
+  const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastProcessedBarcodeRef = useRef<string | null>(null);
+  const lastProcessedTimeRef = useRef<number>(0);
+  
+  
+  const lastProcessedFrameRef = useRef<number>(0);
+  const FRAME_PROCESS_INTERVAL = 100; // ms (10 FPS)
+  
+  
+  const MIN_CONFIDENCE = 0.85; 
+  const TEMPORAL_WINDOW = 500; 
+  const REQUIRED_CONSISTENT_READS = 3; 
+  const DEBOUNCE_WINDOW = 1000; 
+  
+  const shouldProcessFrame = useCallback((): boolean => {
+    const now = Date.now();
+    if (now - lastProcessedFrameRef.current < FRAME_PROCESS_INTERVAL) {
+      return false;
     }
-
-    console.log("📱 Barcode detected:", barcode);
-    setDetectedBarcode(barcode);
-
-    // Mark as scanned for 2 seconds to prevent duplicates
-    scannedBarcodesRef.current.add(barcode);
-    setTimeout(() => {
-      scannedBarcodesRef.current.delete(barcode);
-    }, 2000);
-
-    // Fetch product from backend
-    await fetchProductByBarcode(barcode);
+    lastProcessedFrameRef.current = now;
+    return true;
   }, []);
 
-  // Initialize Quagga Scanner
+  
+  const validateConfidence = useCallback((confidence: number): boolean => {
+    return confidence >= MIN_CONFIDENCE;
+  }, []);
+
+ 
+  const getConsistentBarcode = useCallback(
+    (newCode: string, confidence: number): string | null => {
+      const now = Date.now();
+
+     
+      detectionHistoryRef.current.push({
+        code: newCode,
+        confidence,
+        timestamp: now,
+      });
+
+      
+      detectionHistoryRef.current = detectionHistoryRef.current.filter(
+        (d) => now - d.timestamp < TEMPORAL_WINDOW
+      );
+
+      
+      const recentCodes = detectionHistoryRef.current;
+      if (recentCodes.length === 0) return null;
+
+     
+      const lastN = recentCodes.slice(-REQUIRED_CONSISTENT_READS);
+
+     
+      const allMatch = lastN.length === REQUIRED_CONSISTENT_READS &&
+        lastN.every((d) => d.code === newCode);
+
+      if (allMatch) {
+        
+        const avgConfidence =
+          lastN.reduce((sum, d) => sum + d.confidence, 0) / lastN.length;
+        
+        setDebugInfo((prev) => ({
+          ...prev,
+          lastConfidence: Math.round(avgConfidence * 100),
+        }));
+
+        console.log(
+          ` STABLE: Barcode '${newCode}' detected ${REQUIRED_CONSISTENT_READS}x with avg confidence ${Math.round(avgConfidence * 100)}%`
+        );
+        return newCode;
+      }
+
+      return null;
+    },
+    []
+  );
+
+ 
+  const shouldProcessBarcode = useCallback((barcode: string): boolean => {
+    const now = Date.now();
+
+    
+    if (processingTimeoutRef.current !== null) {
+      return false;
+    }
+
+    if (
+      lastProcessedBarcodeRef.current === barcode &&
+      now - lastProcessedTimeRef.current < DEBOUNCE_WINDOW
+    ) {
+      console.log(
+        `Debouncing: '${barcode}' already processed ${now - lastProcessedTimeRef.current}ms ago`
+      );
+      return false;
+    }
+
+    return true;
+  }, []);
+
+  
+  const handleBarcodeDetected = useCallback(
+    async (result: any) => {
+      // Frame rate limiting
+      if (!shouldProcessFrame()) {
+        return;
+      }
+
+      if (!result || !result.codeResult) return;
+
+      const barcode = result.codeResult.code;
+      const confidence = result.codeResult.confidence || 0;
+
+      // STABILIZATION: Confidence check
+      if (!validateConfidence(confidence)) {
+        console.log(
+          `⚠️  Low confidence (${Math.round(confidence * 100)}%): ignoring '${barcode}'`
+        );
+        setDebugInfo((prev) => ({
+          ...prev,
+          lastConfidence: Math.round(confidence * 100),
+        }));
+        return;
+      }
+
+      // STABILIZATION: Temporal smoothing
+      const consistentBarcode = getConsistentBarcode(barcode, confidence);
+      if (!consistentBarcode) {
+        return; // Not yet consistent
+      }
+
+      // STABILIZATION: Debounce check
+      if (!shouldProcessBarcode(consistentBarcode)) {
+        return;
+      }
+
+      console.log(`📱 Processing barcode: ${consistentBarcode}`);
+      setDetectedBarcode(consistentBarcode);
+
+      
+      processingTimeoutRef.current = setTimeout(() => {
+        processingTimeoutRef.current = null;
+      }, DEBOUNCE_WINDOW);
+
+      
+      lastProcessedBarcodeRef.current = consistentBarcode;
+      lastProcessedTimeRef.current = Date.now();
+
+      await fetchProductByBarcode(consistentBarcode);
+    },
+    [shouldProcessFrame, validateConfidence, getConsistentBarcode, shouldProcessBarcode]
+  );
+
+  
   useLayoutEffect(() => {
     if (!scanning || !videoRef.current) return;
 
-    // Delay initialization to ensure DOM is fully rendered
     const timer = setTimeout(() => {
       if (!videoRef.current || videoRef.current.clientWidth === 0) return;
 
@@ -78,22 +220,22 @@ export default function BarcodeScanner({
             constraints: {
               width: { min: 320, ideal: 640, max: 1280 },
               height: { min: 240, ideal: 480, max: 720 },
-              facingMode: "environment", // Use back camera
+              facingMode: "environment",
               aspectRatio: { ideal: 4 / 3 },
             },
-            target: videoRef.current, // Mount camera stream here
+            target: videoRef.current,
           },
           decoder: {
             readers: [
-              "code_128_reader", // Most common in retail
-              "ean_reader", // EAN-13 (European barcode)
-              "ean_8_reader", // EAN-8 (compact)
-              "upc_reader", // UPC-A (US standard)
-              "upc_e_reader", // UPC-E (compact)
-              "codabar_reader", // Codabar
+              "code_128_reader",
+              "ean_reader",
+              "ean_8_reader",
+              "upc_reader",
+              "upc_e_reader",
+              "codabar_reader",
             ],
             debug: {
-              showCanvas: true, // Show detection overlay
+              showCanvas: false, 
               showPatches: false,
               showFoundPatches: false,
               showSkeleton: false,
@@ -107,7 +249,12 @@ export default function BarcodeScanner({
               },
             },
           },
-          locate: true, // Auto-locate barcode in frame
+          locate: true,
+          
+          locator: {
+            patchSize: "medium", 
+            halfSample: true, 
+          },
         },
         (err) => {
           if (err) {
@@ -121,11 +268,10 @@ export default function BarcodeScanner({
             return;
           }
 
-          console.log("✅ Quagga initialized successfully");
+          console.log("Quagga initialized with stabilization enabled");
           setIsInitialized(true);
           Quagga.start();
 
-          // Listen for barcode detections
           Quagga.onDetected(handleBarcodeDetected);
         }
       );
@@ -133,12 +279,16 @@ export default function BarcodeScanner({
 
     return () => {
       clearTimeout(timer);
+      if (processingTimeoutRef.current) {
+        clearTimeout(processingTimeoutRef.current);
+      }
       Quagga.stop();
       Quagga.offDetected(handleBarcodeDetected);
+      detectionHistoryRef.current = [];
     };
   }, [scanning, handleBarcodeDetected]);
 
-  // Fetch product from backend by barcode
+  
   const fetchProductByBarcode = async (barcode: string) => {
     setIsLoading(true);
     try {
@@ -161,12 +311,10 @@ export default function BarcodeScanner({
 
       const product = await response.json();
 
-      console.log("✅ Product found:", product);
+      console.log(" Product found:", product);
 
-      // Show success notification with product details
       toast.success(`Found: ${product.name} - ₹${product.price}`);
 
-      // Notify parent component to add to cart
       onProductDetected({
         _id: product._id,
         barcode: product.barcode,
@@ -177,6 +325,9 @@ export default function BarcodeScanner({
         taxRate: product.taxRate || 0,
         imageUrl: product.imageUrl,
       });
+
+      
+      detectionHistoryRef.current = [];
     } catch (error) {
       console.error("Error fetching product:", error);
       toast.error("Product not found");
@@ -186,27 +337,33 @@ export default function BarcodeScanner({
     }
   };
 
-  // Handle manual barcode entry
+ 
   const handleManualScan = async (barcode: string) => {
-    if (scannedBarcodesRef.current.has(barcode)) {
+    if (!barcode.trim()) {
+      toast.error("Please enter a barcode");
+      return;
+    }
+
+    if (!shouldProcessBarcode(barcode.trim())) {
       toast.error("Barcode already scanned recently");
       return;
     }
 
-    console.log(" Manual barcode entry:", barcode);
-    setDetectedBarcode(""); // Clear input field
+    console.log("📝 Manual barcode entry:", barcode);
+    setDetectedBarcode("");
 
-    // Mark as scanned for 2 seconds to prevent duplicates
-    scannedBarcodesRef.current.add(barcode);
-    setTimeout(() => {
-      scannedBarcodesRef.current.delete(barcode);
-    }, 2000);
+    
+    processingTimeoutRef.current = setTimeout(() => {
+      processingTimeoutRef.current = null;
+    }, DEBOUNCE_WINDOW);
 
-    // Fetch product from backend
-    await fetchProductByBarcode(barcode);
+    lastProcessedBarcodeRef.current = barcode.trim();
+    lastProcessedTimeRef.current = Date.now();
+
+    await fetchProductByBarcode(barcode.trim());
   };
 
-  // Toggle camera on/off
+ 
   const toggleScanning = () => {
     if (scanning) {
       Quagga.stop();
@@ -223,7 +380,7 @@ export default function BarcodeScanner({
 
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
-      {/* Camera Feed Container */}
+      
       <div
         ref={videoRef}
         id="quagga-container"
@@ -241,15 +398,28 @@ export default function BarcodeScanner({
           </div>
         )}
 
-        {/* Scanning overlay */}
+        {/* Scanning overlay with focus guide */}
         {scanning && (
           <div className="absolute inset-0 pointer-events-none">
+            {/* Center focus box */}
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <div className="w-32 h-32 border-4 border-white border-t-transparent rounded-full animate-spin opacity-50"></div>
+              <div className="w-48 h-24 border-4 border-green-400 rounded-lg opacity-70"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-green-400 text-xs font-semibold">
+                  ALIGN BARCODE
+                </div>
+              </div>
             </div>
+
+            {/* Spinner */}
+            <div className="absolute top-8 left-1/2 transform -translate-x-1/2">
+              <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin opacity-50"></div>
+            </div>
+
+            {/* Instructions */}
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
-              <div className="bg-black bg-opacity-50 text-white px-4 py-2 rounded-full text-sm">
-                Point camera at barcode
+              <div className="bg-black bg-opacity-50 text-white px-4 py-2 rounded-full text-xs">
+                Keep barcode steady and centered
               </div>
             </div>
           </div>
@@ -280,8 +450,19 @@ export default function BarcodeScanner({
           </div>
         )}
 
+        {/* Debug Info */}
+        <div className="text-xs text-gray-500 space-y-1">
+          <p>Last Confidence: {debugInfo.lastConfidence}%</p>
+          <p>
+            Temporal History: {detectionHistoryRef.current.length} detections
+          </p>
+          <p className="text-gray-400">
+            (Requires {REQUIRED_CONSISTENT_READS} consistent reads)
+          </p>
+        </div>
+
         {isLoading && (
-          <div className="flex items-center text-blue-600">
+          <div className="mt-3 flex items-center text-blue-600">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
             Looking up product...
           </div>
@@ -333,8 +514,6 @@ export default function BarcodeScanner({
           </button>
         </div>
       </div>
-
-      
     </div>
   );
 }
