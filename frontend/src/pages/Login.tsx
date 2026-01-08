@@ -28,11 +28,7 @@ interface LoginForm {
 interface AuthResponse {
   token?: string;
   message?: string;
-  user?: {
-    id: string;
-    role: string;
-  };
-  user?: any;
+  userId?: string;
 }
 
 const Login = () => {
@@ -64,22 +60,30 @@ const Login = () => {
     const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
 
     try {
-      // 1. Authenticate to get the token
-      const authRes = await api.post<AuthResponse>(endpoint, data);
+      // Build payload: backend expects `name` for registration
+      const payload = isLogin
+        ? data
+        : {
+            ...data,
+            name: `${data.firstName || ""} ${data.lastName || ""}`.trim(),
+          };
+
+     
+      const authRes = await api.post<AuthResponse>(endpoint, payload);
       const { token } = authRes.data;
 
       if (!token) {
         throw new Error("No token received");
       }
 
-      // 2. Store the token
+      
       localStorage.setItem("hb_token", token);
 
-      // 3. Decode the token to get user info
+      
       const decodedToken = jwtDecode<JwtPayload>(token);
       console.log("Decoded token:", decodedToken);
 
-      // 4. Store user data from token
+     
       const userData = {
         id: decodedToken.id,
         role: decodedToken.role,
@@ -88,7 +92,7 @@ const Login = () => {
       localStorage.setItem("user", JSON.stringify(userData));
       toast.success(isLogin ? "Login successful!" : "Registration successful!");
 
-      // 5. Redirect based on role
+      
       const redirectPath =
         decodedToken.role === "retailer"
           ? "/retailer/dashboard"

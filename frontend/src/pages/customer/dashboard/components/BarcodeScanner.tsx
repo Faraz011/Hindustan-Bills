@@ -329,50 +329,12 @@ export default function BarcodeScanner({
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 shadow-lg"
             disabled={!detectedBarcode?.trim() || isLoading}
           >
-            {isLoading ? "🔍" : "Add"}
+            {isLoading ? "Scanning" : "Add"}
           </button>
         </div>
       </div>
 
-      {/* Test Products */}
-      <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl shadow-lg p-6 border border-yellow-200">
-        <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
-          <span className="mr-2">🧪</span>
-          Test Products
-        </h3>
-        <div className="grid grid-cols-1 gap-3">
-          <button
-            onClick={() => handleManualScan("123456789012")}
-            className="px-4 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white text-sm rounded-lg hover:from-orange-600 hover:to-red-600 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 transition-all duration-200 hover:scale-105 shadow-lg"
-            disabled={isLoading}
-          >
-            <div className="flex items-center justify-between">
-              <span>🥤 Coca Cola 500ml</span>
-              <span className="font-bold">₹45</span>
-            </div>
-          </button>
-          <button
-            onClick={() => handleManualScan("987654321098")}
-            className="px-4 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white text-sm rounded-lg hover:from-orange-600 hover:to-red-600 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 transition-all duration-200 hover:scale-105 shadow-lg"
-            disabled={isLoading}
-          >
-            <div className="flex items-center justify-between">
-              <span>🍟 Lays Classic</span>
-              <span className="font-bold">₹20</span>
-            </div>
-          </button>
-          <button
-            onClick={() => handleManualScan("555666777888")}
-            className="px-4 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white text-sm rounded-lg hover:from-orange-600 hover:to-red-600 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 transition-all duration-200 hover:scale-105 shadow-lg"
-            disabled={isLoading}
-          >
-            <div className="flex items-center justify-between">
-              <span>🥛 Amul Milk 1L</span>
-              <span className="font-bold">₹65</span>
-            </div>
-          </button>
-        </div>
-      </div>
+      
     </div>
   );
 }

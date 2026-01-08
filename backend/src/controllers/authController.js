@@ -72,9 +72,26 @@ export const register = async (req, res) => {
       role: role || "customer", // ✅ take role from request or default
     });
 
+    // Create JWT token
+    const token = jwt.sign(
+      {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profileCompleted: user.profileCompleted,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
     res
       .status(201)
-      .json({ message: "User registered successfully", userId: user._id });
+      .json({
+        message: "User registered successfully",
+        token,
+        userId: user._id,
+      });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
