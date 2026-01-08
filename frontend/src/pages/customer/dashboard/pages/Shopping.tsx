@@ -358,7 +358,7 @@ export default function ScannerPage() {
             <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
               <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6">
                 <h2 className="text-2xl font-bold text-white flex items-center">
-                  📱 Product Scanner
+                   Product Scanner
                 </h2>
                 <p className="text-blue-100 mt-1">
                   Point your camera at a barcode or use manual entry

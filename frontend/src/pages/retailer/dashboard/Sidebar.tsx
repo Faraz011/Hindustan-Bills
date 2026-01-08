@@ -1,6 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
+import { X } from "lucide-react";
 
-const Sidebar = () => {
+interface SidebarProps {
+  onClose?: () => void;
+}
+
+const Sidebar = ({ onClose }: SidebarProps) => {
   const location = useLocation();
 
   const navItems = [
@@ -11,10 +16,23 @@ const Sidebar = () => {
   ];
 
   return (
-    <div className="w-64 bg-white h-screen shadow-lg">
+    <div className="w-64 bg-white h-screen shadow-lg relative">
+      {/* Mobile close button */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md md:hidden"
+        title="Close sidebar"
+      >
+        <X className="h-5 w-5" />
+      </button>
+
       <div className="p-4">
         {/* Logo */}
-        <Link to="/" className="flex items-center space-x-3 mb-4">
+        <Link
+          to="/"
+          className="flex items-center space-x-3 mb-4"
+          onClick={onClose}
+        >
           <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center">
             <span className="text-white font-bold text-sm">HB</span>
           </div>

@@ -18,7 +18,15 @@ interface JWTPayload {
   role?: string;
 }
 
-export default function DashboardNavbar() {
+interface DashboardNavbarProps {
+  onToggleSidebar?: () => void;
+  sidebarOpen?: boolean;
+}
+
+export default function DashboardNavbar({
+  onToggleSidebar,
+  sidebarOpen,
+}: DashboardNavbarProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
