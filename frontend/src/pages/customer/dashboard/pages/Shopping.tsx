@@ -4,7 +4,7 @@ import BarcodeScanner from "../components/BarcodeScanner";
 import Cart from "./Cart";
 import toast from "react-hot-toast";
 
-// Use configured API base (VITE_API_URL) when available (production).
+
 const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 interface ScannedProduct {
