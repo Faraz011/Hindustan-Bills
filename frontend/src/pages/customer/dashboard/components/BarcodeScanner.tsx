@@ -64,8 +64,8 @@ export default function BarcodeScannerScanbot({
 
         // Initialize the SDK
         await ScanbotSDK.initialize({
-          licenseKey: licenseKey, // Use provided license key
-          enginePath: "/wasm/", // Path to WASM binaries (must be in public folder)
+          licenseKey: licenseKey, 
+          enginePath: "/wasm/", 
         });
 
         console.log("✅ Scanbot SDK initialized successfully with license key");
