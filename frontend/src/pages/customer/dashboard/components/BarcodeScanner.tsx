@@ -16,7 +16,7 @@ interface BarcodeScannerScanbotProps {
   onProductDetected: (product: ScannedProduct) => void;
   onError?: (error: string) => void;
   shopId?: string;
-  licenseKey?: string; // Optional - leave blank for 60-min free sessions
+  licenseKey?: string; 
 }
 
 const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
@@ -31,7 +31,7 @@ export default function BarcodeScannerScanbot({
   onProductDetected,
   onError,
   shopId,
-  licenseKey = LICENSE_KEY, // Use provided license key
+  licenseKey = LICENSE_KEY, 
 }: BarcodeScannerScanbotProps) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
@@ -47,10 +47,7 @@ export default function BarcodeScannerScanbot({
   const lastProcessedTimeRef = useRef<number>(0);
   const DEBOUNCE_WINDOW = 1000; // ms
 
-  /**
-   * Initialize Scanbot SDK
-   * This happens once on component mount
-   */
+ 
   useEffect(() => {
     const initializeScanbotSDK = async () => {
       if (isInitialized || scannerStatus === "initializing") return;
@@ -58,21 +55,21 @@ export default function BarcodeScannerScanbot({
       setScannerStatus("initializing");
 
       try {
-        // Dynamically import ScanbotSDK
+       
         const module = await import("scanbot-web-sdk/ui");
         const ScanbotSDK = module.default;
 
-        // Initialize the SDK
+       
         await ScanbotSDK.initialize({
           licenseKey: licenseKey, 
           enginePath: "/wasm/", 
         });
 
-        console.log("✅ Scanbot SDK initialized successfully with license key");
+        console.log(" Scanbot SDK initialized successfully with license key");
         setIsInitialized(true);
         setScannerStatus("ready");
       } catch (error) {
-        console.error("❌ Scanbot SDK initialization error:", error);
+        console.error(" Scanbot SDK initialization error:", error);
         toast.error("Failed to initialize scanner. Check console.");
         onError?.("Scanner initialization failed");
         setScannerStatus("error");
@@ -82,9 +79,7 @@ export default function BarcodeScannerScanbot({
     initializeScanbotSDK();
   }, [isInitialized, licenseKey, onError]);
 
-  /**
-   * Check if barcode should be processed (debounce)
-   */
+  
   const shouldProcessBarcode = useCallback((barcode: string): boolean => {
     const now = Date.now();
 
@@ -93,7 +88,7 @@ export default function BarcodeScannerScanbot({
       now - lastProcessedTimeRef.current < DEBOUNCE_WINDOW
     ) {
       console.log(
-        `⏳ Debouncing: '${barcode}' already processed ${
+        ` Debouncing: '${barcode}' already processed ${
           now - lastProcessedTimeRef.current
         }ms ago`
       );
@@ -103,9 +98,7 @@ export default function BarcodeScannerScanbot({
     return true;
   }, []);
 
-  /**
-   * Fetch product from backend using barcode
-   */
+  
   const fetchProductByBarcode = async (barcode: string) => {
     setIsLoading(true);
     try {
@@ -126,11 +119,11 @@ export default function BarcodeScannerScanbot({
 
       const product = await response.json();
 
-      console.log("✅ Product found:", product);
+      console.log(" Product found:", product);
 
       toast.success(`Found: ${product.name} - ₹${product.price}`);
 
-      // Notify parent to add to cart
+      
       onProductDetected({
         _id: product._id,
         barcode: product.barcode,
@@ -150,10 +143,7 @@ export default function BarcodeScannerScanbot({
     }
   };
 
-  /**
-   * Start the scanner UI
-   * Scanbot handles all the camera, barcode detection, and UI
-   */
+  
   const startScanner = useCallback(async () => {
     if (!isInitialized) {
       toast.error("Scanner not initialized yet. Please wait...");
@@ -164,22 +154,22 @@ export default function BarcodeScannerScanbot({
       setIsScanning(true);
       setScannerStatus("scanning");
 
-      // Dynamically import ScanbotSDK for scanner
+      
       const module = await import("scanbot-web-sdk/ui");
       const ScanbotSDK = module.default;
 
-      // Create barcode scanner configuration
+      
       const config =
         new ScanbotSDK.UI.Config.BarcodeScannerScreenConfiguration();
 
-      // UI Customization
+      
       config.palette = config.palette || {};
       config.palette.sbColorPrimary = "#2180A0"; // Teal
       config.palette.sbColorSecondary = "#32B8C6"; // Light teal
       config.topBar = config.topBar || {};
       config.topBar.mode = "GRADIENT";
 
-      // User guidance - safely set with fallbacks
+      
       config.userGuidance = config.userGuidance || {};
       config.userGuidance.title = config.userGuidance.title || {};
       (config.userGuidance.title as any).text = "Hold barcode at center";
@@ -188,7 +178,7 @@ export default function BarcodeScannerScanbot({
       ((config.userGuidance as any).subtitle as any).text =
         "Scanning will start automatically";
 
-      // Enable single barcode scanning (closes after scan)
+      
       const useCase = new ScanbotSDK.UI.Config.SingleScanningMode();
       config.useCase = useCase;
 
@@ -198,36 +188,36 @@ export default function BarcodeScannerScanbot({
         // Launch the scanner
         const result = await ScanbotSDK.UI.createBarcodeScanner(config);
 
-        console.log("🔍 Scan result:", result);
+        console.log(" Scan result:", result);
 
         if (!result) {
-          console.log("❌ No scan result returned");
+          console.log(" No scan result returned");
           return;
         }
 
-        // Check if result has items array
+        
         if (
           !result.items ||
           !Array.isArray(result.items) ||
           result.items.length === 0
         ) {
-          console.log("❌ No items in scan result");
+          console.log(" No items in scan result");
           return;
         }
 
         const firstItem = result.items[0];
-        console.log("🔍 First item:", firstItem);
+        console.log(" First item:", firstItem);
 
         if (!firstItem) {
-          console.log("❌ First item is null/undefined");
+          console.log(" First item is null/undefined");
           return;
         }
 
-        // Handle different possible result structures
+        
         let scannedBarcode: string | null = null;
         let barcodeType: string = "unknown";
 
-        // Try different ways to extract the barcode
+        
         if (
           firstItem.barcode &&
           typeof firstItem.barcode === "object" &&
@@ -241,42 +231,41 @@ export default function BarcodeScannerScanbot({
         } else if (typeof firstItem === "string") {
           scannedBarcode = firstItem;
         } else if (firstItem.rawBytes && firstItem.rawBytes.length > 0) {
-          // Fallback: try to decode as string
+          
           try {
             scannedBarcode = new TextDecoder().decode(
               new Uint8Array(firstItem.rawBytes)
             );
           } catch (decodeError) {
-            console.error("❌ Could not decode raw bytes:", decodeError);
+            console.error(" Could not decode raw bytes:", decodeError);
           }
         }
 
         if (scannedBarcode && scannedBarcode.trim()) {
           console.log(
-            `✅ Barcode scanned: ${scannedBarcode} (Type: ${barcodeType})`
+            ` Barcode scanned: ${scannedBarcode} (Type: ${barcodeType})`
           );
 
           setLastScannedBarcode(scannedBarcode);
 
-          // Check debounce window
+          
           if (shouldProcessBarcode(scannedBarcode)) {
             lastProcessedBarcodeRef.current = scannedBarcode;
             lastProcessedTimeRef.current = Date.now();
 
-            // Fetch product from backend
             await fetchProductByBarcode(scannedBarcode);
           } else {
             toast.error("Barcode already scanned recently");
           }
         } else {
           console.error(
-            "❌ Could not extract barcode text from result:",
+            " Could not extract barcode text from result:",
             firstItem
           );
           toast.error("Failed to read barcode. Please try again.");
         }
       } catch (scanError) {
-        console.error("❌ Scanner execution error:", scanError);
+        console.error("Scanner execution error:", scanError);
         toast.error("Scanner failed. Please try again.");
         setScannerStatus("error");
       }
@@ -292,9 +281,7 @@ export default function BarcodeScannerScanbot({
     }
   }, [isInitialized, shouldProcessBarcode, onProductDetected, onError]);
 
-  /**
-   * Handle manual barcode input
-   */
+  
   const handleManualEntry = async (barcode: string) => {
     if (!barcode.trim()) {
       toast.error("Please enter a barcode");
@@ -306,7 +293,7 @@ export default function BarcodeScannerScanbot({
       return;
     }
 
-    console.log("📝 Manual barcode entry:", barcode);
+    console.log(" Manual barcode entry:", barcode);
 
     lastProcessedBarcodeRef.current = barcode.trim();
     lastProcessedTimeRef.current = Date.now();
@@ -379,25 +366,13 @@ export default function BarcodeScannerScanbot({
             Initializing...
           </span>
         ) : scannerStatus === "error" ? (
-          "❌ Scanner Error"
+          " Scanner Error"
         ) : isScanning ? (
-          "🔄 Scanning..."
+          " Scanning..."
         ) : (
-          "📱 Start Scanning"
+          " Start Scanning"
         )}
       </button>
-
-      {/* Features Info */}
-      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-        <h4 className="font-semibold text-blue-900 mb-2">Why Scanbot?</h4>
-        <ul className="text-sm text-blue-800 space-y-1">
-          <li>✅ Handles motion blur & shaky hands</li>
-          <li>✅ Works in low-light conditions</li>
-          <li>✅ Scans damaged barcodes</li>
-          <li>✅ Industry-grade reliability</li>
-          <li>✅ Licensed for unlimited use</li>
-        </ul>
-      </div>
 
       {/* Manual Entry */}
       <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
@@ -435,17 +410,6 @@ export default function BarcodeScannerScanbot({
             {isLoading ? "..." : "Add"}
           </button>
         </div>
-      </div>
-
-      {/* Requirements */}
-      <div className="bg-green-50 rounded-lg p-4 border border-green-200 text-sm">
-        <p className="text-green-900 font-medium mb-2">✅ Setup Complete:</p>
-        <ul className="text-green-800 space-y-1">
-          <li>✅ Scanbot SDK installed and configured</li>
-          <li>✅ License key applied for unlimited use</li>
-          <li>✅ WASM files copied to public/wasm folder</li>
-          <li>✅ Professional-grade barcode scanning</li>
-        </ul>
       </div>
     </div>
   );
