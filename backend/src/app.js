@@ -1,4 +1,3 @@
-// src/app.js
 import express from "express";
 import cors from "cors";
 import session from "express-session";
@@ -6,6 +5,7 @@ import passport from "passport";
 import authRoutes from "./routes/authRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import barcodeRoutes from "./routes/barcodeRoutes.js"; // barcode scanning/verification
+import menuRoutes from "./routes/menuRoutes.js"; // menu cart operations
 import orderRoutes from "./routes/orderRoutes.js"; // order routes
 import cartRoutes from "./routes/cartRoutes.js"; // cart routes
 import paymentRoutes from "./routes/paymentRoutes.js"; // ✅ new payment route
@@ -55,6 +55,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api", receiptRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/barcode", barcodeRoutes);
+app.use("/api/menu", menuRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/payments", paymentRoutes); // ✅ added payment integration

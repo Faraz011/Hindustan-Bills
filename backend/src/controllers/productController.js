@@ -34,15 +34,24 @@ export const createProduct = asyncHandler(async (req, res) => {
   );
 
   if (!shop) {
-    return res
-      .status(404)
-      .json({
-        message: "Shop not found. Please complete your shop setup first.",
-      });
+    return res.status(404).json({
+      message: "Shop not found. Please complete your shop setup first.",
+    });
   }
 
-  const { name, description, price, category, stock, imageUrl, barcode, sku } =
-    req.body;
+  const {
+    name,
+    description,
+    price,
+    category,
+    stock,
+    imageUrl,
+    barcode,
+    sku,
+    dietaryInfo,
+    preparationTime,
+    isAvailable,
+  } = req.body;
 
   // Validate required fields
   if (!name || !price) {
@@ -53,7 +62,7 @@ export const createProduct = asyncHandler(async (req, res) => {
     name,
     description,
     price,
-    category: category || "General",
+    category: category || "other",
     stock: stock || 0,
     image: imageUrl || "/placeholder-product.png",
     shop: shop._id,
@@ -61,6 +70,9 @@ export const createProduct = asyncHandler(async (req, res) => {
       barcode: barcode || undefined, // Ensure barcode is not null
       sku: sku || undefined,
     },
+    dietaryInfo,
+    preparationTime,
+    isAvailable: isAvailable !== undefined ? isAvailable : true,
   });
 
   res.status(201).json(product);
@@ -96,6 +108,9 @@ export const updateProduct = asyncHandler(async (req, res) => {
     barcode,
     sku,
     isActive,
+    dietaryInfo,
+    preparationTime,
+    isAvailable,
   } = req.body;
 
   product.name = name || product.name;
@@ -105,6 +120,9 @@ export const updateProduct = asyncHandler(async (req, res) => {
   if (stock !== undefined) product.stock = stock;
   if (imageUrl) product.image = imageUrl;
   if (isActive !== undefined) product.isActive = isActive;
+  if (dietaryInfo !== undefined) product.dietaryInfo = dietaryInfo;
+  if (preparationTime !== undefined) product.preparationTime = preparationTime;
+  if (isAvailable !== undefined) product.isAvailable = isAvailable;
 
   // Update metadata
   product.metadata = {
@@ -115,6 +133,23 @@ export const updateProduct = asyncHandler(async (req, res) => {
 
   const updatedProduct = await product.save();
   res.json(updatedProduct);
+});
+
+// @desc    Get products for a specific shop (for customers)
+// @route   GET /api/products/shop/:shopId
+// @access  Private
+export const getProductsByShopId = asyncHandler(async (req, res) => {
+  const { shopId } = req.params;
+
+  const products = await Product.find({
+    shop: shopId,
+    isActive: true,
+  })
+    .select("-__v")
+    .sort({ createdAt: -1 })
+    .lean();
+
+  res.json(products);
 });
 
 // @desc    Delete a product

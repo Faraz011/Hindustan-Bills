@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { ScanLine, Store, RefreshCw, Camera } from "lucide-react";
 import BarcodeScanner from "../components/BarcodeScanner";
 import Cart from "./Cart";
 import toast from "react-hot-toast";
-
 
 const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
@@ -89,8 +90,8 @@ export default function ScannerPage() {
       if (response.ok) {
         // Update local cart state with session products
         const products = data.products.map((item: any) => ({
-          _id: item._id, // Use ScannedProduct._id as the cart item ID
-          productId: item.product._id, // Keep product ID for reference
+          _id: item._id,
+          productId: item.product._id,
           barcode: item.product.barcode,
           name: item.product.name,
           price: item.product.price,
@@ -121,7 +122,7 @@ export default function ScannerPage() {
 
       const data = await response.json();
       setSessionCode(data.sessionCode);
-      console.log("✅ Session initialized:", data.sessionCode);
+      console.log(" Session initialized:", data.sessionCode);
     } catch (error) {
       console.error("Error initializing session:", error);
       toast.error(
@@ -130,19 +131,16 @@ export default function ScannerPage() {
     }
   };
 
-  // Handle product scan
   const handleProductDetected = async (product: ScannedProduct) => {
     try {
-      // For mock products (testing), skip API call and add directly to cart
       if (product._id.startsWith("mock")) {
-        console.log("🧪 Adding mock product to cart:", product);
+        console.log(" Adding mock product to cart:", product);
         setCartItems((prevItems) => {
           const existingItem = prevItems.find(
             (item) => item._id === product._id
           );
 
           if (existingItem) {
-            // Update quantity if item already exists
             return prevItems.map((item) =>
               item._id === product._id
                 ? { ...item, quantity: item.quantity + 1 }
@@ -316,55 +314,76 @@ export default function ScannerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-[#EAEAEA]">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-2">
-            🛍️ Smart Shopping
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
+        >
+          <div className="flex items-center justify-center mb-6">
+            <div className="w-20 h-20 bg-gradient-to-br from-[#561485] to-[#3C47BA] rounded-full flex items-center justify-center shadow-xl">
+              <ScanLine className="h-10 w-10 text-white" />
+            </div>
+          </div>
+          <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-[#561485] to-[#3C47BA] bg-clip-text text-transparent mb-6">
+            Smart Shopping
           </h1>
-          <p className="text-lg text-gray-600">
-            Scan products and pay instantly
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Scan products with your camera and pay instantly
           </p>
-        </div>
+        </motion.div>
 
         {/* Selected Shop Display */}
         {selectedShop && (
-          <div className="bg-white rounded-lg shadow-md p-4 mb-6 max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 mb-10 max-w-5xl mx-auto"
+          >
             <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">
-                  🏪 Shopping at: {selectedShop.name}
-                </h2>
-                <p className="text-sm text-gray-600">
-                  {selectedShop.address.street}, {selectedShop.address.city},{" "}
-                  {selectedShop.address.state}
-                </p>
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-[#561485] to-[#3C47BA] rounded-full flex items-center justify-center shadow-lg">
+                  <Store className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    Shopping at: {selectedShop.name}
+                  </h2>
+                  <p className="text-gray-600 flex items-center gap-2">
+                    <div className="w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center">
+                      <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                    </div>
+                    {selectedShop.address.street},{" "}
+                    {selectedShop.address.city}, {selectedShop.address.state}
+                  </p>
+                </div>
               </div>
               <button
                 onClick={() => navigate("/customer/dashboard/select-shop")}
-                className="text-primary-600 hover:text-primary-800 text-sm font-medium"
+                className="bg-gradient-to-r from-[#A13266] to-[#561485] text-white px-6 py-3 rounded-xl hover:from-[#A13266]/90 hover:to-[#561485]/90 transition-all duration-200 transform hover:scale-105 shadow-lg font-semibold"
               >
                 Change Shop
               </button>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
           {/* Scanner Section */}
           <div className="order-2 lg:order-1">
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6">
-                <h2 className="text-2xl font-bold text-white flex items-center">
-                   Product Scanner
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+              <div className="bg-gradient-to-r from-[#561485] to-[#3C47BA] p-8">
+                <h2 className="text-2xl font-bold text-white flex items-center mb-3">
+                  Product Scanner
                 </h2>
-                <p className="text-blue-100 mt-1">
+                <p className="text-white/90 text-lg">
                   Point your camera at a barcode or use manual entry
                 </p>
               </div>
-              <div className="p-6">
+              <div className="p-8">
                 <BarcodeScanner
                   onProductDetected={handleProductDetected}
                   onError={(err) => toast.error(err)}
@@ -375,7 +394,12 @@ export default function ScannerPage() {
           </div>
 
           {/* Cart Section */}
-          <div className="order-1 lg:order-2">
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+            className="order-1 lg:order-2"
+          >
             <div className="sticky top-6">
               <Cart
                 items={cartItems}
@@ -384,19 +408,27 @@ export default function ScannerPage() {
                 onCheckout={handleCheckout}
               />
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Session Info */}
         {sessionCode && (
-          <div className="mt-8 text-center">
-            <div className="inline-flex items-center bg-white rounded-full px-4 py-2 shadow-md">
-              <span className="text-sm text-gray-600 mr-2">Session:</span>
-              <code className="bg-gray-100 px-3 py-1 rounded-full text-sm font-mono">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mt-8 text-center"
+          >
+            <div className="inline-flex items-center bg-white rounded-full px-8 py-4 shadow-lg border border-gray-100">
+              <RefreshCw className="h-5 w-5 text-[#561485] mr-3" />
+              <span className="text-gray-600 mr-3 font-medium">
+                Active Session:
+              </span>
+              <code className="bg-gradient-to-r from-[#561485]/10 to-[#3C47BA]/10 text-[#561485] px-4 py-2 rounded-full text-sm font-mono font-semibold">
                 {sessionCode}
               </code>
             </div>
-          </div>
+          </motion.div>
         )}
       </div>
     </div>

@@ -7,6 +7,7 @@ import {
   createOrder,
   updateOrderStatus,
   getOrderHistory,
+  createOrderFromCart,
 } from "../controllers/orderController.js";
 
 const router = express.Router();
@@ -15,6 +16,8 @@ const router = express.Router();
 router.route("/").get(protect, getOrders).post(protect, createOrder);
 
 router.route("/history").get(protect, getOrderHistory);
+
+router.route("/create-from-cart").post(protect, createOrderFromCart);
 
 router.route("/:id").get(protect, getOrderById);
 

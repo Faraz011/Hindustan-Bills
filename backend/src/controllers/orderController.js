@@ -1,5 +1,6 @@
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
+import Cart from "../models/Cart.js";
 import asyncHandler from "express-async-handler";
 
 // @desc    Get order history for current customer
@@ -172,4 +173,108 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
   const updatedOrder = await order.save();
 
   res.json(updatedOrder);
+});
+
+
+export const createOrderFromCart = asyncHandler(async (req, res) => {
+  const { upiId } = req.body;
+  const userId = req.user.id;
+
+  // Find user's cart
+  const cart = await Cart.findOne({ user: userId }).populate({
+    path: "items.product",
+    select: "_id name price shop stock",
+    populate: {
+      path: "shop",
+      select: "name",
+    },
+  });
+
+  if (!cart || cart.items.length === 0) {
+    res.status(400);
+    throw new Error("Cart is empty");
+  }
+
+
+  if (!upiId || !upiId.includes("@")) {
+    res.status(400);
+    throw new Error("Valid UPI ID is required");
+  }
+
+
+  const shopId = cart.items[0].product.shop._id;
+
+
+  let subtotal = 0;
+  const orderItems = [];
+
+  for (const item of cart.items) {
+    const product = item.product;
+
+    if (product.shop._id.toString() !== shopId.toString()) {
+      res.status(400);
+      throw new Error("All items must be from the same shop");
+    }
+
+
+    const itemTotal = product.price * item.quantity;
+    subtotal += itemTotal;
+
+    orderItems.push({
+      product: product._id,
+      quantity: item.quantity,
+      price: product.price,
+      total: itemTotal,
+    });
+  }
+
+  const tax = 0;
+  const total = subtotal;
+
+  const orderCount = await Order.countDocuments();
+  const orderNumber = `ORD${orderCount.toString().padStart(5, "0")}`;
+
+  const order = new Order({
+    orderNumber,
+    customer: userId,
+    shop: shopId,
+    items: orderItems,
+    subtotal,
+    tax,
+    total,
+    payment: {
+      status: "paid",
+      method: "UPI",
+      transactionId: `UPI_${Date.now()}_${Math.random()
+        .toString(36)
+        .substr(2, 9)}`,
+      amount: total,
+      currency: "INR",
+    },
+  });
+
+  // Update product stock
+  for (const item of cart.items) {
+    await Product.updateOne(
+      { _id: item.product._id },
+      { $inc: { stock: -item.quantity } }
+    );
+  }
+
+ 
+  await Cart.findOneAndDelete({ user: userId });
+
+  const createdOrder = await order.save();
+
+  
+  await createdOrder.populate([
+    { path: "customer", select: "name email" },
+    { path: "shop", select: "name" },
+    { path: "items.product", select: "name price" },
+  ]);
+
+  res.status(201).json({
+    order: createdOrder,
+    message: "Order created successfully",
+  });
 });

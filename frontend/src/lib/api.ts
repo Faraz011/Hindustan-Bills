@@ -183,22 +183,22 @@ export const deleteProduct = async (id: string) => {
 };
 
 // -------------------- Cart (barcode routes) --------------------
-export const addToCart = async (barcodeOrProductId: string, quantity = 1) => {
-  return api.post("/api/barcode/cart/add", {
-    barcode: barcodeOrProductId,
+export const addToCart = async (productId: string, quantity = 1) => {
+  return api.post("/api/cart", {
+    productId,
     quantity,
   });
 };
 
 export const getCart = async () => {
-  const res = await api.get<{ cart?: any; items?: any[] }>("/api/barcode/cart");
+  const res = await api.get<{ cart?: any; items?: any[] }>("/api/cart");
   // backend may return { cart: {...} } or { items: [...] }
   if ((res as any).cart) return (res as any).cart;
   return res;
 };
 
 export const removeFromCart = async (productId: string) => {
-  return api.post("/api/barcode/cart/remove", { productId });
+  return api.delete(`/api/cart/${productId}`);
 };
 
 export const updateCartItem = async (productId: string, quantity: number) => {
@@ -215,8 +215,8 @@ export const updateOrderStatus = async (orderId: string, status: string) => {
 };
 
 export const getOrders = async () => {
-  const res = await api.get<{ orders?: Order[] }>("/api/orders");
-  return res.orders ?? [];
+  const res = await api.get<{ orders?: Order[] }>("/api/shop/orders");
+  return res.orders ?? res ?? [];
 };
 
 export const getOrdersHistory = async (params?: {

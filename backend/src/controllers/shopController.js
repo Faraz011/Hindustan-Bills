@@ -1,10 +1,9 @@
 import Shop from "../models/Shop.js";
 import User from "../models/User.js";
+import Order from "../models/Order.js";
 import asyncHandler from "express-async-handler";
 
-// @desc    Get shop details
-// @route   GET /api/shop/details
-// @access  Private
+
 export const getShopDetails = asyncHandler(async (req, res) => {
   console.log("getShopDetails called with user ID:", req.user.id);
   const shop = await Shop.findOne({ owner: req.user.id }).select("-__v").lean();
@@ -116,8 +115,10 @@ export const getOrders = asyncHandler(async (req, res) => {
   }
 
   const orders = await Order.find({ shop: shop._id })
-    .populate("products.product", "name price")
+    .populate("customer", "name email")
+    .populate("items.product", "name price")
     .select("-__v")
+    .sort({ createdAt: -1 })
     .lean();
   res.json(orders);
 });

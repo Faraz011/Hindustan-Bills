@@ -21,6 +21,26 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      enum: [
+        // Retail categories
+        "electronics",
+        "clothing",
+        "groceries",
+        "household",
+        "personal_care",
+        "books",
+        "sports",
+        "toys",
+        "other",
+        // Restaurant categories
+        "appetizer",
+        "main_course",
+        "dessert",
+        "beverage",
+        "side_dish",
+        "soup",
+        "salad",
+      ],
     },
     stock: {
       type: Number,
@@ -54,6 +74,30 @@ const productSchema = new mongoose.Schema(
         width: Number,
         height: Number,
       },
+    },
+    // Restaurant-specific fields
+    dietaryInfo: [
+      {
+        type: String,
+        enum: [
+          "vegetarian",
+          "vegan",
+          "gluten-free",
+          "dairy-free",
+          "nut-free",
+          "spicy",
+          "low-carb",
+          "keto",
+        ],
+      },
+    ],
+    preparationTime: {
+      type: Number, // in minutes
+      min: 0,
+    },
+    isAvailable: {
+      type: Boolean,
+      default: true,
     },
   },
   {

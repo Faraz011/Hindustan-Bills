@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import { ShoppingCart, Trash2, Plus, Minus, CreditCard } from "lucide-react";
 
 interface CartItem {
   _id: string;
@@ -51,17 +52,17 @@ export default function Cart({
 
   if (items.length === 0) {
     return (
-      <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-        <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <span className="text-4xl">🛒</span>
+      <div className="bg-gradient-to-br from-gray-50 to-gray-100 shadow-xl rounded-2xl p-12 text-center border border-gray-200">
+        <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+          <ShoppingCart className="h-12 w-12 text-blue-600" />
         </div>
-        <h3 className="text-xl font-semibold text-gray-800 mb-2">
+        <h3 className="text-2xl font-bold text-gray-800 mb-3">
           Your cart is empty
         </h3>
-        <p className="text-gray-600 mb-6">
+        <p className="text-gray-600 mb-8 text-lg">
           Start scanning products to add them to your cart
         </p>
-        <div className="text-6xl animate-bounce"></div>
+        <div className="text-6xl animate-bounce">🛒</div>
       </div>
     );
   }
@@ -71,7 +72,7 @@ export default function Cart({
       {/* Cart Header */}
       <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-6">
         <h2 className="text-2xl font-bold text-white flex items-center">
-          <span className="mr-3">🛒</span>
+          <ShoppingCart className="h-7 w-7 mr-3" />
           Shopping Cart
         </h2>
         <p className="text-green-100 mt-1">
@@ -106,10 +107,10 @@ export default function Cart({
                       onRemoveItem(item._id);
                       toast.success(`${item.name} removed`);
                     }}
-                    className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+                    className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition-colors"
                     title="Remove item"
                   >
-                    <span className="text-lg">✕</span>
+                    <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
 
@@ -126,7 +127,7 @@ export default function Cart({
                       className="px-3 py-1 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-l-lg transition-colors"
                       disabled={item.quantity <= 1}
                     >
-                      −
+                      <Minus className="h-4 w-4" />
                     </button>
                     <span className="px-4 py-1 font-semibold text-gray-800 border-x border-gray-300">
                       {item.quantity}
@@ -137,7 +138,7 @@ export default function Cart({
                       }
                       className="px-3 py-1 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-r-lg transition-colors"
                     >
-                      +
+                      <Plus className="h-4 w-4" />
                     </button>
                   </div>
 
@@ -182,7 +183,7 @@ export default function Cart({
           className="w-full mt-6 px-6 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 shadow-lg"
         >
           <span className="flex items-center justify-center">
-            <span className="mr-2">💳</span>
+            <CreditCard className="h-5 w-5 mr-2" />
             Proceed to Payment
           </span>
         </button>

@@ -296,6 +296,107 @@ export const scanProductByBarcode = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Add product to cart by product ID (for menu ordering)
+// @route   POST /api/barcode/add-by-id
+// @access  Private
+export const addProductById = asyncHandler(async (req, res) => {
+  const { productId, sessionCode, quantity = 1, shopId } = req.body;
+  const userId = req.user.id;
+
+  // Validate inputs
+  if (!productId || !sessionCode || !shopId) {
+    return res
+      .status(400)
+      .json({ message: "Product ID, session code, and shop ID are required" });
+  }
+
+  console.log(
+    `🔍 Adding product by ID: ${productId} for session: ${sessionCode} in shop: ${shopId}`
+  );
+
+  // Look up product in database - now filtered by shop
+  const product = await Product.findOne({
+    _id: productId,
+    shop: shopId,
+    isActive: true,
+  })
+    .select(
+      "_id metadata.barcode metadata.sku name category price stock taxRate image description shop"
+    )
+    .populate("shop", "name")
+    .lean();
+
+  if (!product) {
+    console.log(`❌ Product not found: ${productId} in shop: ${shopId}`);
+    return res.status(404).json({
+      message: `Product not found in selected shop`,
+      productId: productId,
+      shopId: shopId,
+    });
+  }
+
+  // Check stock before returning
+  if (product.stock <= 0) {
+    return res.status(409).json({
+      message: "Product out of stock",
+      product,
+    });
+  }
+
+  // Check if product already scanned in this session
+  let scannedProduct = await ScannedProduct.findOne({
+    sessionCode,
+    user: userId,
+    product: product._id,
+    isActive: true,
+  });
+
+  if (scannedProduct) {
+    // Update quantity
+    scannedProduct.quantity += quantity;
+    await scannedProduct.save();
+  } else {
+    // Create new scanned product entry
+    scannedProduct = new ScannedProduct({
+      sessionCode,
+      user: userId,
+      product: product._id,
+      quantity,
+    });
+    await scannedProduct.save();
+  }
+
+  // Populate product details
+  await scannedProduct.populate("product");
+
+  console.log(
+    `✅ Product added: ${product.name} (Qty: ${scannedProduct.quantity})`
+  );
+
+  res.json({
+    scannedProduct: {
+      _id: scannedProduct._id,
+      sessionCode: scannedProduct.sessionCode,
+      product: {
+        _id: product._id,
+        barcode: product.metadata.barcode,
+        sku: product.metadata.sku,
+        name: product.name,
+        category: product.category,
+        price: product.price,
+        taxRate: product.taxRate,
+        stock: product.stock,
+        imageUrl: product.image,
+        description: product.description,
+        shop: product.shop,
+      },
+      quantity: scannedProduct.quantity,
+      scannedAt: scannedProduct.scannedAt,
+    },
+    message: "Product added to cart successfully",
+  });
+});
+
 // @desc    Search products by keyword
 // @route   GET /api/products/search?q=keyword
 // @access  Private

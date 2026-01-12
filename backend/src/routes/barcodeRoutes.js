@@ -8,6 +8,7 @@ import {
   updateScannedProduct,
   removeScannedProduct,
   clearSession,
+  addProductById,
 } from "../controllers/barcodeController.js";
 
 const router = express.Router();

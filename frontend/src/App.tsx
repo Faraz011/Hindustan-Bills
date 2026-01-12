@@ -21,11 +21,13 @@ import ShopDetailsPage from "./pages/retailer/dashboard/pages/ShopDetails";
 import CustomerDashboardPage from "./pages/customer/dashboard/pages/Dashboard";
 import CustomerOrdersPage from "./pages/customer/dashboard/pages/Orders";
 import ShoppingPage from "./pages/customer/dashboard/pages/Shopping";
-import CustomerCartPage from "./pages/customer/dashboard/pages/Cart";
+import ShoppingOrMenuPage from "./pages/customer/dashboard/components/ShoppingOrMenuPage";
+import Cart from "./pages/customer/dashboard/pages/Cart";
 import ShopSelectionPage from "./pages/customer/dashboard/pages/ShopSelection";
+import MenuCartPage from "./pages/customer/dashboard/pages/MenuCart";
+import UpiPaymentPage from "./pages/customer/dashboard/pages/UpiPayment";
 import History from "./pages/History";
 import Receipt from "./pages/Receipt";
-import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 
 const dummyCart = [
@@ -63,7 +65,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/auth/google/callback" element={<GoogleCallback />} />
           <Route path="/products" element={<Products />} />
-          <Route path="/cart" element={<Cart />} />
+
           {/* <Route path="/receipt/:id" element={<Receipt />} /> */}
           {/* Retailer Dashboard Routes */}
           <Route
@@ -91,8 +93,10 @@ function App() {
           >
             <Route index element={<CustomerDashboardPage />} />
             <Route path="select-shop" element={<ShopSelectionPage />} />
-            <Route path="shopping" element={<ShoppingPage />} />
-            <Route path="cart" element={<CustomerCartPage />} />
+            <Route path="shopping" element={<ShoppingOrMenuPage />} />
+            <Route path="cart" element={<Cart />} />
+            <Route path="menu-cart" element={<MenuCartPage />} />
+            <Route path="upi-payment" element={<UpiPaymentPage />} />
             <Route path="orders" element={<CustomerOrdersPage />} />
           </Route>
           <Route path="/history" element={<History />} />
