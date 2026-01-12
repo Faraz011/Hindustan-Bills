@@ -6,9 +6,20 @@ import {
   addProduct,
   updateProduct,
   deleteProduct,
+  getShopDetails,
 } from "../../../../lib/api";
 import { toast } from "react-hot-toast";
-import { Plus, Edit2, Trash2, X, Package, Barcode } from "lucide-react";
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  X,
+  Package,
+  Barcode,
+  Clock,
+  Leaf,
+  Flame,
+} from "lucide-react";
 
 interface ProductFormData {
   name: string;
@@ -19,6 +30,9 @@ interface ProductFormData {
   description?: string;
   stock?: number;
   imageUrl?: string;
+  dietaryInfo?: string[];
+  preparationTime?: number;
+  isAvailable?: boolean;
 }
 
 interface Product {
@@ -32,6 +46,13 @@ interface Product {
   stock?: number;
   imageUrl?: string;
   shopId?: string;
+  dietaryInfo?: string[];
+  preparationTime?: number;
+  isAvailable?: boolean;
+}
+
+interface Shop {
+  businessType: string;
 }
 
 export default function Products() {
@@ -39,6 +60,7 @@ export default function Products() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [shopDetails, setShopDetails] = useState<Shop | null>(null);
   const {
     register,
     handleSubmit,
@@ -57,17 +79,35 @@ export default function Products() {
     }
   };
 
+  const loadShopDetails = async () => {
+    try {
+      const shop = await getShopDetails();
+      setShopDetails(shop);
+    } catch (error) {
+      console.error("Failed to load shop details:", error);
+    }
+  };
+
   useEffect(() => {
     loadProducts();
+    loadShopDetails();
   }, []);
 
   const onSubmit = async (data: ProductFormData) => {
     try {
+      // Filter out restaurant-specific fields if not a restaurant
+      const filteredData = { ...data };
+      if (shopDetails?.businessType !== "restaurant") {
+        delete filteredData.dietaryInfo;
+        delete filteredData.preparationTime;
+        delete filteredData.isAvailable;
+      }
+
       if (editingProduct) {
-        await updateProduct(editingProduct._id!, data);
+        await updateProduct(editingProduct._id!, filteredData);
         toast.success("Product updated successfully!");
       } else {
-        await addProduct(data);
+        await addProduct(filteredData);
         toast.success("Product added successfully!");
       }
       setIsModalOpen(false);
@@ -90,6 +130,10 @@ export default function Products() {
       description: product.description || "",
       stock: product.stock || 0,
       imageUrl: product.imageUrl || "",
+      dietaryInfo: product.dietaryInfo || [],
+      preparationTime: product.preparationTime || 0,
+      isAvailable:
+        product.isAvailable !== undefined ? product.isAvailable : true,
     });
     setIsModalOpen(true);
   };
@@ -124,7 +168,19 @@ export default function Products() {
   const handleCancel = () => {
     setIsModalOpen(false);
     setEditingProduct(null);
-    reset();
+    reset({
+      name: "",
+      price: 0,
+      barcode: "",
+      sku: "",
+      category: "",
+      description: "",
+      stock: 0,
+      imageUrl: "",
+      dietaryInfo: [],
+      preparationTime: 0,
+      isAvailable: true,
+    });
   };
 
   if (isLoading) {
@@ -190,17 +246,19 @@ export default function Products() {
                     <p className="text-2xl font-bold text-green-600 mb-2">
                       ₹{product.price}
                     </p>
-                    {product.barcode && (
-                      <div className="flex items-center text-sm text-gray-500 mb-2">
-                        <Barcode className="h-4 w-4 mr-1" />
-                        {product.barcode}
-                      </div>
-                    )}
-                    {product.category && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {product.category}
-                      </span>
-                    )}
+                    {product.barcode &&
+                      shopDetails?.businessType !== "restaurant" && (
+                        <div className="flex items-center text-sm text-gray-500 mb-2">
+                          <Barcode className="h-4 w-4 mr-1" />
+                          {product.barcode}
+                        </div>
+                      )}
+                    {product.category &&
+                      shopDetails?.businessType !== "restaurant" && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {product.category}
+                        </span>
+                      )}
                   </div>
                   <div className="flex space-x-2">
                     <button
@@ -224,14 +282,56 @@ export default function Products() {
                   </p>
                 )}
 
-                <div className="mt-4 flex items-center justify-between text-sm">
-                  <span className="text-gray-500">
-                    Stock: {product.stock || 0}
-                  </span>
-                  {product.sku && (
-                    <span className="text-gray-500">SKU: {product.sku}</span>
-                  )}
-                </div>
+                {/* Non-restaurant fields display */}
+                {shopDetails?.businessType !== "restaurant" && (
+                  <div className="mt-4 flex items-center justify-between text-sm">
+                    <span className="text-gray-500">
+                      Stock: {product.stock || 0}
+                    </span>
+                    {product.sku && (
+                      <span className="text-gray-500">SKU: {product.sku}</span>
+                    )}
+                  </div>
+                )}
+
+                {/* Restaurant-specific display */}
+                {shopDetails?.businessType === "restaurant" && (
+                  <div className="mt-3 space-y-2">
+                    {product.dietaryInfo && product.dietaryInfo.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {product.dietaryInfo.map((diet) => (
+                          <span
+                            key={diet}
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                          >
+                            <Leaf className="h-3 w-3 mr-1" />
+                            {diet}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {product.preparationTime && (
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Clock className="h-4 w-4 mr-1" />
+                        {product.preparationTime} min prep time
+                      </div>
+                    )}
+                    {product.isAvailable !== undefined && (
+                      <div className="flex items-center text-sm">
+                        <Flame className="h-4 w-4 mr-1" />
+                        <span
+                          className={
+                            product.isAvailable
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }
+                        >
+                          {product.isAvailable ? "Available" : "Unavailable"}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -281,53 +381,58 @@ export default function Products() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Stock Quantity
-                  </label>
-                  <input
-                    type="number"
-                    {...register("stock", { min: 0 })}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="0"
-                  />
-                </div>
+                {/* Non-restaurant fields */}
+                {shopDetails?.businessType !== "restaurant" && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Stock Quantity
+                      </label>
+                      <input
+                        type="number"
+                        {...register("stock", { min: 0 })}
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                        placeholder="0"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Barcode
-                  </label>
-                  <input
-                    type="text"
-                    {...register("barcode")}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="Enter barcode"
-                  />
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Barcode
+                      </label>
+                      <input
+                        type="text"
+                        {...register("barcode")}
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                        placeholder="Enter barcode"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    SKU
-                  </label>
-                  <input
-                    type="text"
-                    {...register("sku")}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="Enter SKU"
-                  />
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        SKU
+                      </label>
+                      <input
+                        type="text"
+                        {...register("sku")}
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                        placeholder="Enter SKU"
+                      />
+                    </div>
 
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Category
-                  </label>
-                  <input
-                    type="text"
-                    {...register("category")}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="e.g., Electronics, Grocery, Clothing"
-                  />
-                </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Category
+                      </label>
+                      <input
+                        type="text"
+                        {...register("category")}
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                        placeholder="e.g., Electronics, Grocery, Clothing"
+                      />
+                    </div>
+                  </>
+                )}
 
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -352,6 +457,70 @@ export default function Products() {
                     placeholder="https://example.com/image.jpg"
                   />
                 </div>
+
+                {/* Restaurant-specific fields */}
+                {shopDetails?.businessType === "restaurant" && (
+                  <>
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <Leaf className="inline h-4 w-4 mr-1" />
+                        Dietary Information
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          "vegetarian",
+                          "vegan",
+                          "gluten-free",
+                          "dairy-free",
+                          "nut-free",
+                          "spicy",
+                        ].map((diet) => (
+                          <label key={diet} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              value={diet}
+                              {...register("dietaryInfo")}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="ml-2 text-sm capitalize">
+                              {diet}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <Clock className="inline h-4 w-4 mr-1" />
+                        Preparation Time (minutes)
+                      </label>
+                      <input
+                        type="number"
+                        {...register("preparationTime", { min: 0 })}
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                        placeholder="15"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <Flame className="inline h-4 w-4 mr-1" />
+                        Available
+                      </label>
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          {...register("isAvailable")}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="ml-2 text-sm">
+                          Item is currently available
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
