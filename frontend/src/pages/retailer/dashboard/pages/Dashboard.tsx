@@ -6,6 +6,7 @@ import {
   getShopOrders,
 } from "../../../../lib/api";
 import { toast } from "react-hot-toast";
+import { Package, ClipboardList, TrendingUp } from "lucide-react";
 
 interface Shop {
   _id: string;
@@ -119,78 +120,46 @@ export default function Dashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl shadow-lg border border-blue-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
           <div className="flex items-center">
-            <div className="p-2 bg-blue-500 rounded-lg">
-              <svg
-                className="w-6 h-6 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                />
-              </svg>
+            <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
+              <Package className="h-7 w-7 text-white" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">
+              <p className="text-sm font-semibold text-blue-700">
                 Total Products
               </p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-3xl font-bold text-blue-900">
                 {totalProducts}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl shadow-lg border border-green-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
           <div className="flex items-center">
-            <div className="p-2 bg-green-500 rounded-lg">
-              <svg
-                className="w-6 h-6 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
+            <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg">
+              <ClipboardList className="h-7 w-7 text-white" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Orders</p>
-              <p className="text-2xl font-bold text-gray-900">{totalOrders}</p>
+              <p className="text-sm font-semibold text-green-700">
+                Total Orders
+              </p>
+              <p className="text-3xl font-bold text-green-900">{totalOrders}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-6 rounded-xl shadow-lg border border-yellow-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
           <div className="flex items-center">
-            <div className="p-2 bg-yellow-500 rounded-lg">
-              <svg
-                className="w-6 h-6 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-                />
-              </svg>
+            <div className="p-3 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl shadow-lg">
+              <TrendingUp className="h-7 w-7 text-white" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm font-semibold text-yellow-700">
+                Total Revenue
+              </p>
+              <p className="text-3xl font-bold text-yellow-900">
                 ₹{totalRevenue.toFixed(2)}
               </p>
             </div>
@@ -199,49 +168,66 @@ export default function Dashboard() {
       </div>
 
       {/* Recent Orders */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Recent Orders
-        </h3>
-        {recentOrders.length > 0 ? (
-          <div className="space-y-4">
-            {recentOrders.map((order) => (
-              <div
-                key={order._id}
-                className="flex items-center justify-between p-4 border rounded-lg"
-              >
-                <div>
-                  <p className="font-medium text-gray-900">
-                    Order #{order._id.slice(-8)}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {new Date(order.createdAt).toLocaleDateString()}
-                  </p>
+      <div className="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
+          <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+            <ClipboardList className="h-6 w-6 mr-3 text-blue-600" />
+            Recent Orders
+          </h3>
+        </div>
+        <div className="p-6">
+          {recentOrders.length > 0 ? (
+            <div className="space-y-4">
+              {recentOrders.map((order) => (
+                <div
+                  key={order._id}
+                  className="flex items-center justify-between p-5 border border-gray-200 rounded-lg hover:shadow-md transition-all duration-200 hover:border-blue-300 bg-gradient-to-r from-white to-gray-50"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                      <ClipboardList className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">
+                        Order #{order._id.slice(-8)}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {new Date(order.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-gray-900 text-lg">
+                      ₹{order.totalAmount?.toFixed(2)}
+                    </p>
+                    <span
+                      className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
+                        order.status === "delivered"
+                          ? "bg-green-100 text-green-800 border border-green-200"
+                          : order.status === "processing"
+                          ? "bg-blue-100 text-blue-800 border border-blue-200"
+                          : order.status === "pending"
+                          ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
+                          : "bg-red-100 text-red-800 border border-red-200"
+                      }`}
+                    >
+                      {order.status.charAt(0).toUpperCase() +
+                        order.status.slice(1)}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-medium text-gray-900">
-                    ₹{order.totalAmount?.toFixed(2)}
-                  </p>
-                  <span
-                    className={`px-2 py-1 text-xs rounded-full ${
-                      order.status === "delivered"
-                        ? "bg-green-100 text-green-800"
-                        : order.status === "processing"
-                        ? "bg-blue-100 text-blue-800"
-                        : order.status === "pending"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {order.status}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500 text-center py-8">No orders yet</p>
-        )}
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <ClipboardList className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 text-lg mb-2">No orders yet</p>
+              <p className="text-gray-400">
+                Orders will appear here once customers start shopping!
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
