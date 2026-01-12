@@ -1,7 +1,14 @@
 // frontend/src/components/DashboardNavbar.tsx
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { User, LogOut, Menu, X } from "lucide-react";
+import {
+  User,
+  LogOut,
+  Menu,
+  X,
+  SidebarOpen,
+  SidebarClose,
+} from "lucide-react";
 import { jwtDecode } from "jwt-decode";
 
 interface User {
@@ -25,7 +32,7 @@ interface DashboardNavbarProps {
 
 export default function DashboardNavbar({
   onToggleSidebar,
-  sidebarOpen,
+  sidebarOpen = true,
 }: DashboardNavbarProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -58,17 +65,28 @@ export default function DashboardNavbar({
   };
 
   return (
-    <nav className="bg-white border-b border-gray-200 px-4 py-3">
+    <nav className="bg-white border-b border-gray-100 px-4 py-3 shadow-sm">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         {/* Logo/Brand */}
         <div className="flex items-center">
+          <button
+            onClick={onToggleSidebar}
+            className="mr-3 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-all duration-200"
+            title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+          >
+            {sidebarOpen ? (
+              <SidebarClose className="h-5 w-5" />
+            ) : (
+              <SidebarOpen className="h-5 w-5" />
+            )}
+          </button>
           <Link
             to="/retailer/dashboard"
             className="text-xl font-bold text-gray-900"
           >
             Retailer
           </Link>
-          <span className="ml-2 text-sm text-gray-500 bg-blue-100 px-2 py-1 rounded hidden sm:inline">
+          <span className="ml-2 text-sm text-white bg-gradient-to-r from-[#561485] to-[#3C47BA] px-3 py-1 rounded-full hidden sm:inline">
             Dashboard
           </span>
         </div>
@@ -77,7 +95,11 @@ export default function DashboardNavbar({
         <div className="hidden md:flex items-center space-x-4">
           {/* Welcome Message */}
           <div className="flex items-center space-x-2">
-            <User className="h-5 w-5 text-gray-400" />
+            <div className="w-8 h-8 bg-gradient-to-br from-[#561485] to-[#3C47BA] rounded-full flex items-center justify-center shadow-md">
+              <span className="text-white font-semibold text-sm">
+                {(user?.name || "U").charAt(0).toUpperCase()}
+              </span>
+            </div>
             <div className="text-sm">
               <p className="text-gray-600">Welcome back,</p>
               <p className="font-medium text-gray-900">
@@ -89,7 +111,7 @@ export default function DashboardNavbar({
           {/* Logout Button */}
           <button
             onClick={handleLogout}
-            className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+            className="inline-flex items-center px-4 py-2 border border-gray-200 rounded-lg shadow-sm text-sm font-medium text-gray-600 bg-white hover:bg-[#A13266] hover:border-[#A13266] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#A13266] transition-all duration-200"
           >
             <LogOut className="h-4 w-4 mr-2" />
             Logout
@@ -100,7 +122,7 @@ export default function DashboardNavbar({
         <div className="md:hidden">
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 p-2"
+            className="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#561485] p-2 transition-all duration-200"
           >
             {isMobileMenuOpen ? (
               <X className="h-6 w-6" />
@@ -113,13 +135,30 @@ export default function DashboardNavbar({
 
       {/* Mobile menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-gray-200 pt-4 pb-3">
+        <div className="md:hidden border-t border-gray-100 pt-4 pb-3">
           <div className="px-2 space-y-1">
+            {/* Sidebar Toggle */}
+            <button
+              onClick={onToggleSidebar}
+              className="flex items-center w-full px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all duration-200"
+            >
+              {sidebarOpen ? (
+                <SidebarClose className="h-5 w-5 mr-3" />
+              ) : (
+                <SidebarOpen className="h-5 w-5 mr-3" />
+              )}
+              {sidebarOpen ? "Hide Sidebar" : "Show Sidebar"}
+            </button>
+
             {/* Welcome Message */}
             <div className="flex items-center space-x-2 px-3 py-2">
-              <User className="h-5 w-5 text-gray-400" />
+              <div className="w-8 h-8 bg-gradient-to-br from-[#561485] to-[#3C47BA] rounded-full flex items-center justify-center shadow-md">
+                <span className="text-white font-semibold text-sm">
+                  {(user?.name || "U").charAt(0).toUpperCase()}
+                </span>
+              </div>
               <div className="text-sm">
-                <p className="text-gray-600">Welcome back,</p>
+                <p className="text-gray-500">Welcome back,</p>
                 <p className="font-medium text-gray-900">
                   {user?.name || "User"}
                 </p>
@@ -129,7 +168,7 @@ export default function DashboardNavbar({
             {/* Logout Button */}
             <button
               onClick={handleLogout}
-              className="flex items-center w-full px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+              className="flex items-center w-full px-3 py-2 text-base font-medium text-gray-600 hover:text-white hover:bg-[#A13266] transition-all duration-200 rounded-lg"
             >
               <LogOut className="h-5 w-5 mr-3" />
               Logout
