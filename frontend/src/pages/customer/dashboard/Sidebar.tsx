@@ -55,7 +55,7 @@ const Sidebar = ({ onClose }: SidebarProps) => {
               onClick={() => handleNavigation("#home")}
               className="flex items-center focus:outline-none"
             >
-              <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden">
+              <div className="w-12 h-12 bg-[#561485] rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden shadow-lg shadow-[#561485]/10">
                 <img
                   src="/FUTUREOFBUSINESS.png"
                   alt="Hindustan Bills Logo"

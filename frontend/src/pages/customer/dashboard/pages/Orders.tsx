@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, Clock, CheckCircle, XCircle, ChevronRight, Calendar, CreditCard, X } from "lucide-react";
+import { Package, Clock, CheckCircle, ChevronRight, Calendar, CreditCard, X } from "lucide-react";
 import { getOrdersHistory } from "../../../../lib/api";
 
 interface Order {
@@ -41,12 +41,12 @@ export default function Orders() {
 
   const getStatusConfig = (status: string) => {
     switch (status.toLowerCase()) {
-      case "completed":
+      case "paid":
         return { icon: CheckCircle, color: "text-emerald-500", bg: "bg-emerald-50", border: "border-emerald-100" };
       case "pending":
         return { icon: Clock, color: "text-amber-500", bg: "bg-amber-50", border: "border-amber-100" };
-      case "cancelled":
-        return { icon: XCircle, color: "text-rose-500", bg: "bg-rose-50", border: "border-rose-100" };
+      case "sent out":
+        return { icon: Package, color: "text-indigo-500", bg: "bg-indigo-50", border: "border-indigo-100" };
       default:
         return { icon: Package, color: "text-gray-500", bg: "bg-gray-50", border: "border-gray-100" };
     }

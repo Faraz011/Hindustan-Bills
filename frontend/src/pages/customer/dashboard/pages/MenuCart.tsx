@@ -103,7 +103,7 @@ export default function MenuCartPage() {
           <p className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Delicious items are waiting for you in the menu</p>
         </div>
         <button
-          onClick={() => navigate("/customer/dashboard/menu")}
+          onClick={() => navigate("/customer/dashboard/shopping")}
           className="px-10 py-5 bg-gray-900 text-white rounded-[1.5rem] font-black uppercase tracking-widest text-xs hover:bg-[#561485] transition-all shadow-xl shadow-black/10 active:scale-95"
         >
           Explore Menu

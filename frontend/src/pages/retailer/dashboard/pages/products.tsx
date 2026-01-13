@@ -1,4 +1,3 @@
-// frontend/src/pages/retailor/dashboard/products.tsx
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
@@ -20,7 +19,13 @@ import {
   Leaf,
   Flame,
   Minus,
+  Search,
+  ChevronRight,
+  ArrowRight,
+  Image as ImageIcon,
+  Tag
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ProductFormData {
   name: string;
@@ -62,6 +67,8 @@ export default function Products() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [shopDetails, setShopDetails] = useState<Shop | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
   const {
     register,
     handleSubmit,
@@ -96,7 +103,6 @@ export default function Products() {
 
   const onSubmit = async (data: ProductFormData) => {
     try {
-      // Filter out restaurant-specific fields if not a restaurant
       const filteredData = { ...data };
       if (shopDetails?.businessType !== "restaurant") {
         delete filteredData.dietaryInfo;
@@ -169,19 +175,7 @@ export default function Products() {
   const handleCancel = () => {
     setIsModalOpen(false);
     setEditingProduct(null);
-    reset({
-      name: "",
-      price: 0,
-      barcode: "",
-      sku: "",
-      category: "",
-      description: "",
-      stock: 0,
-      imageUrl: "",
-      dietaryInfo: [],
-      preparationTime: 0,
-      isAvailable: true,
-    });
+    reset();
   };
 
   const updateStock = async (productId: string, change: number) => {
@@ -197,398 +191,289 @@ export default function Products() {
           p._id === productId ? { ...p, stock: newStock } : p
         )
       );
-      
-      toast.success(`Stock updated: ${product.name} now has ${newStock} units`);
     } catch (error) {
       toast.error("Failed to update stock");
     }
   };
 
+  const filteredProducts = products.filter(p => 
+    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.category?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="w-12 h-12 border-4 border-[#561485]/20 border-t-[#561485] rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="space-y-10">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Products</h1>
-          <p className="text-gray-600 mt-2">
-            Manage your product inventory and details
-          </p>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tighter uppercase">Inventory</h1>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Manage items, stock, and pricing</p>
         </div>
-        <button
-          onClick={handleAddNew}
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Product
-        </button>
+        
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input 
+              type="text" 
+              placeholder="Search Inventory..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-11 pr-6 py-3 bg-white border border-gray-100 rounded-2xl text-xs font-bold uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-[#561485]/10 w-64 transition-all shadow-sm"
+            />
+          </div>
+          <button
+            onClick={handleAddNew}
+            className="px-8 py-4 bg-[#561485] text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-[#561485]/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" /> Add Item
+          </button>
+        </div>
       </div>
 
-      {/* Products Grid */}
-      {products.length === 0 ? (
-        <div className="text-center py-12">
-          <Package className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">
-            No products
-          </h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Get started by adding your first product.
-          </p>
-          <div className="mt-6">
-            <button
-              onClick={handleAddNew}
-              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Product
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((product) => (
-            <div
-              key={product._id}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-            >
-              <div className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      {product.name}
-                    </h3>
-                    <p className="text-2xl font-bold text-green-600 mb-2">
-                      ₹{product.price}
-                    </p>
-                    {product.barcode &&
-                      shopDetails?.businessType !== "restaurant" && (
-                        <div className="flex items-center text-sm text-gray-500 mb-2">
-                          <Barcode className="h-4 w-4 mr-1" />
-                          {product.barcode}
-                        </div>
-                      )}
-                    {product.category &&
-                      shopDetails?.businessType !== "restaurant" && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {product.category}
-                        </span>
-                      )}
-                  </div>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => handleEdit(product)}
-                      className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(product._id!)}
-                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                    {/* Stock Update Buttons */}
-                    <div className="flex items-center space-x-1">
-                      <button
-                        onClick={() => updateStock(product._id!, -1)}
-                        className="p-1 bg-red-100 hover:bg-red-200 text-red-600 rounded transition-colors"
-                        disabled={(product.stock || 0) <= 0}
-                      >
-                        <Minus className="h-3 w-3" />
-                      </button>
-                      <span className="text-sm font-medium text-gray-700 min-w-[60px] text-center">
-                        {product.stock || 0}
-                      </span>
-                      <button
-                        onClick={() => updateStock(product._id!, 1)}
-                        className="p-1 bg-green-100 hover:bg-green-200 text-green-600 rounded transition-colors"
-                      >
-                        <Plus className="h-3 w-3" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {product.description && (
-                  <p className="text-sm text-gray-600 mt-3 line-clamp-2">
-                    {product.description}
-                  </p>
-                )}
-
-                {/* Non-restaurant fields display */}
-                {shopDetails?.businessType !== "restaurant" && (
-                  <div className="mt-4 flex items-center justify-between text-sm">
-                    <span className="text-gray-500">
-                      Stock: {product.stock || 0}
-                    </span>
-                    {product.sku && (
-                      <span className="text-gray-500">SKU: {product.sku}</span>
-                    )}
-                  </div>
-                )}
-
-                {/* Restaurant-specific display */}
-                {shopDetails?.businessType === "restaurant" && (
-                  <div className="mt-3 space-y-2">
-                    {product.dietaryInfo && product.dietaryInfo.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {product.dietaryInfo.map((diet) => (
-                          <span
-                            key={diet}
-                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
-                          >
-                            <Leaf className="h-3 w-3 mr-1" />
-                            {diet}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    {product.preparationTime && (
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Clock className="h-4 w-4 mr-1" />
-                        {product.preparationTime} min prep time
-                      </div>
-                    )}
-                    {product.isAvailable !== undefined && (
-                      <div className="flex items-center text-sm">
-                        <Flame className="h-4 w-4 mr-1" />
-                        <span
-                          className={
-                            product.isAvailable
-                              ? "text-green-600"
-                              : "text-red-600"
-                          }
-                        >
-                          {product.isAvailable ? "Available" : "Unavailable"}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+      {/* Grid */}
+      <AnimatePresence mode="popLayout">
+        {filteredProducts.length === 0 ? (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="py-20 text-center space-y-4"
+          >
+            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto">
+              <Package className="w-10 h-10 text-gray-200" />
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-medium text-gray-900">
-                {editingProduct ? "Edit Product" : "Add New Product"}
-              </h3>
-              <button
-                onClick={handleCancel}
-                className="text-gray-400 hover:text-gray-600"
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">No products found</p>
+          </motion.div>
+        ) : (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          >
+            {filteredProducts.map((product, i) => (
+              <motion.div
+                key={product._id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.05 }}
+                className="group bg-white rounded-[2rem] border border-gray-50 shadow-sm hover:shadow-xl hover:shadow-black/5 transition-all duration-300 overflow-hidden"
               >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Product Name *
-                  </label>
-                  <input
-                    type="text"
-                    {...register("name", { required: true })}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="Enter product name"
-                  />
+                {/* Image Placeholder/Thumbnail */}
+                <div className="h-40 bg-gray-50 flex items-center justify-center relative group-hover:bg-gray-100 transition-colors">
+                  {product.image ? (
+                    <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <ImageIcon className="w-10 h-10 text-gray-200" />
+                  )}
+                  <div className="absolute top-4 right-4 flex gap-2">
+                    <button 
+                      onClick={() => handleEdit(product)}
+                      className="p-2 bg-white/90 backdrop-blur-md rounded-xl text-gray-400 hover:text-[#561485] shadow-sm transition-all"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(product._id!)}
+                      className="p-2 bg-white/90 backdrop-blur-md rounded-xl text-gray-400 hover:text-rose-500 shadow-sm transition-all"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {product.category && (
+                    <div className="absolute bottom-4 left-4">
+                      <span className="px-3 py-1 bg-white/90 backdrop-blur-md text-[9px] font-black uppercase tracking-widest rounded-full shadow-sm text-gray-900 border border-white/20">
+                        {product.category}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Price (₹) *
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    {...register("price", { required: true, min: 0 })}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="0.00"
-                  />
-                </div>
+                <div className="p-6 space-y-6">
+                  <div>
+                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight line-clamp-1">{product.name}</h3>
+                    <p className="text-lg font-black text-[#561485] tracking-tighter mt-1">₹{product.price.toFixed(0)}</p>
+                  </div>
 
-                {/* Non-restaurant fields */}
-                {shopDetails?.businessType !== "restaurant" && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Stock Quantity
-                      </label>
-                      <input
-                        type="number"
-                        {...register("stock", { min: 0 })}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                        placeholder="0"
-                      />
+                  {shopDetails?.businessType === 'restaurant' ? (
+                    <div className="flex flex-wrap gap-2">
+                      {product.dietaryInfo?.map(diet => (
+                        <div key={diet} className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-md text-[8px] font-black uppercase tracking-widest flex items-center gap-1">
+                          <Leaf className="w-2 h-2" /> {diet}
+                        </div>
+                      ))}
                     </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Barcode
-                      </label>
-                      <input
-                        type="text"
-                        {...register("barcode")}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                        placeholder="Enter barcode"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        SKU
-                      </label>
-                      <input
-                        type="text"
-                        {...register("sku")}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                        placeholder="Enter SKU"
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Category
-                      </label>
-                      <input
-                        type="text"
-                        {...register("category")}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                        placeholder="e.g., Electronics, Grocery, Clothing"
-                      />
-                    </div>
-                  </>
-                )}
-
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    {...register("description")}
-                    rows={3}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="Enter product description"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Image URL
-                  </label>
-                  <input
-                    type="url"
-                    {...register("imageUrl")}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="https://example.com/image.jpg"
-                  />
-                </div>
-
-                {/* Restaurant-specific fields */}
-                {shopDetails?.businessType === "restaurant" && (
-                  <>
-                    <div className="sm:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        <Leaf className="inline h-4 w-4 mr-1" />
-                        Dietary Information
-                      </label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {[
-                          "vegetarian",
-                          "vegan",
-                          "gluten-free",
-                          "dairy-free",
-                          "nut-free",
-                          "spicy",
-                        ].map((diet) => (
-                          <label key={diet} className="flex items-center">
-                            <input
-                              type="checkbox"
-                              value={diet}
-                              {...register("dietaryInfo")}
-                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                            />
-                            <span className="ml-2 text-sm capitalize">
-                              {diet}
-                            </span>
-                          </label>
-                        ))}
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                        <Barcode className="w-3 h-3" /> SKU: {product.sku || 'N/A'}
                       </div>
                     </div>
+                  )}
 
+                  <div className="flex items-center justify-between pt-6 border-t border-gray-50">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        <Clock className="inline h-4 w-4 mr-1" />
-                        Preparation Time (minutes)
-                      </label>
-                      <input
-                        type="number"
-                        {...register("preparationTime", { min: 0 })}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                        placeholder="15"
-                      />
+                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Stock Level</p>
+                      <span className={`text-xs font-black uppercase transition-colors ${
+                        (product.stock || 0) < 5 ? 'text-rose-500' : 'text-emerald-500'
+                      }`}>
+                        {product.stock || 0} Units
+                      </span>
                     </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        <Flame className="inline h-4 w-4 mr-1" />
-                        Available
-                      </label>
-                      <div className="flex items-center">
-                        <input
-                          type="checkbox"
-                          {...register("isAvailable")}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="ml-2 text-sm">
-                          Item is currently available
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-1">
+                      <button 
+                        onClick={() => updateStock(product._id!, -1)}
+                        className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-900 hover:bg-gray-100 transition-all font-black text-lg"
+                      >
+                        -
+                      </button>
+                      <button 
+                        onClick={() => updateStock(product._id!, 1)}
+                        className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-900 hover:bg-gray-100 transition-all font-black text-lg"
+                      >
+                        +
+                      </button>
                     </div>
-                  </>
-                )}
-              </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-              <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-                <button
-                  type="button"
+      {/* Modal Redesign */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={handleCancel}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-xl bg-white rounded-[3rem] shadow-2xl overflow-hidden overflow-y-auto max-h-[90vh]"
+            >
+              <div className="p-8 md:p-12 bg-gradient-to-br from-[#561485] via-[#3C47BA] to-[#A13266] text-white">
+                <button 
                   onClick={handleCancel}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="absolute top-8 right-8 p-3 bg-white/10 hover:bg-white/20 rounded-2xl transition-all"
                 >
-                  Cancel
+                  <X className="w-5 h-5 text-white" />
                 </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting
-                    ? editingProduct
-                      ? "Updating..."
-                      : "Adding..."
-                    : editingProduct
-                    ? "Update Product"
-                    : "Add Product"}
-                </button>
+                <div className="space-y-2">
+                  <div className="inline-flex items-center px-4 py-1.5 bg-white/10 rounded-full border border-white/10 text-xs font-black uppercase tracking-widest">
+                    Editor
+                  </div>
+                  <h2 className="text-3xl font-black tracking-tighter uppercase leading-none">
+                    {editingProduct ? "Modify Product" : "New Inventory Item"}
+                  </h2>
+                </div>
               </div>
-            </form>
+
+              <form onSubmit={handleSubmit(onSubmit)} className="p-8 md:p-12 space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="md:col-span-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Item Name</label>
+                    <input 
+                      {...register("name", { required: true })}
+                      placeholder="e.g. Premium Espresso"
+                      className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:bg-white focus:border-[#561485]/20 focus:outline-none transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Price (₹)</label>
+                    <input 
+                      type="number" 
+                      step="0.01"
+                      {...register("price", { required: true, min: 0 })}
+                      placeholder="0.00"
+                      className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:bg-white focus:border-[#561485]/20 focus:outline-none transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Current Stock</label>
+                    <input 
+                      type="number" 
+                      {...register("stock")}
+                      placeholder="0"
+                      className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:bg-white focus:border-[#561485]/20 focus:outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="md:col-span-1">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Category</label>
+                    <input 
+                      {...register("category")}
+                      placeholder="Beverages"
+                      className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:bg-white focus:border-[#561485]/20 focus:outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="md:col-span-1">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">SKU / Barcode</label>
+                    <input 
+                      {...register("sku")}
+                      placeholder="HB-SKU-001"
+                      className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:bg-white focus:border-[#561485]/20 focus:outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Description</label>
+                    <textarea 
+                      {...register("description")}
+                      rows={3}
+                      placeholder="Describe the product..."
+                      className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:bg-white focus:border-[#561485]/20 focus:outline-none transition-all resize-none"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Image URL</label>
+                    <input 
+                      {...register("imageUrl")}
+                      placeholder="https://images..."
+                      className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:bg-white focus:border-[#561485]/20 focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                  <button 
+                    type="button"
+                    onClick={handleCancel}
+                    className="flex-1 py-5 bg-gray-50 text-gray-900 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-gray-100 transition-all"
+                  >
+                    Discard Changes
+                  </button>
+                  <button 
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-[2] py-5 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-[#561485] shadow-xl shadow-[#561485]/10 active:scale-95 transition-all disabled:opacity-50"
+                  >
+                    {isSubmitting ? "Processing..." : editingProduct ? "Update Product" : "Save to Inventory"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }
