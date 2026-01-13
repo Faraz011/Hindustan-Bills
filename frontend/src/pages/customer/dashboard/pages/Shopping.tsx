@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ScanLine, Store, RefreshCw, Camera } from "lucide-react";
+import { ScanLine, Store, RefreshCw, ChevronLeft, LayoutGrid, Info } from "lucide-react";
 import BarcodeScanner from "../components/BarcodeScanner";
 import Cart from "./Cart";
 import toast from "react-hot-toast";
@@ -19,7 +19,7 @@ interface ScannedProduct {
 
 interface CartItem extends ScannedProduct {
   quantity: number;
-  productId?: string; // Product._id for reference
+  productId?: string;
 }
 
 interface SelectedShop {
@@ -41,7 +41,6 @@ export default function ScannerPage() {
   const [selectedShop, setSelectedShop] = useState<SelectedShop | null>(null);
   const navigate = useNavigate();
 
-  // Check for selected shop on component mount
   useEffect(() => {
     const shopData = localStorage.getItem("selectedShop");
     if (!shopData) {
@@ -55,7 +54,7 @@ export default function ScannerPage() {
       setSelectedShop(shop);
     } catch (error) {
       console.error("Error parsing selected shop:", error);
-      toast.error("Invalid shop selection. Please select a shop again.");
+      toast.error("Invalid shop selection");
       navigate("/customer/dashboard/select-shop");
       return;
     }
@@ -63,7 +62,6 @@ export default function ScannerPage() {
     initializeSession();
   }, [navigate]);
 
-  // Load session products when session code is available
   useEffect(() => {
     if (sessionCode) {
       loadSessionProducts();
@@ -72,23 +70,11 @@ export default function ScannerPage() {
 
   const loadSessionProducts = async () => {
     try {
-      const response = await fetch(
-        `${API_BASE}/api/barcode/session/${sessionCode}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("hb_token")}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-
+      const response = await fetch(`${API_BASE}/api/barcode/session/${sessionCode}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("hb_token")}` },
+      });
       if (response.ok) {
-        // Update local cart state with session products
+        const data = await response.json();
         const products = data.products.map((item: any) => ({
           _id: item._id,
           productId: item.product._id,
@@ -102,7 +88,7 @@ export default function ScannerPage() {
         setCartItems(products);
       }
     } catch (error) {
-      console.error("Error loading session products:", error);
+      console.error("Error loading session:", error);
     }
   };
 
@@ -115,47 +101,18 @@ export default function ScannerPage() {
           Authorization: `Bearer ${localStorage.getItem("hb_token")}`,
         },
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSessionCode(data.sessionCode);
       }
-
-      const data = await response.json();
-      setSessionCode(data.sessionCode);
-      console.log(" Session initialized:", data.sessionCode);
     } catch (error) {
       console.error("Error initializing session:", error);
-      toast.error(
-        "Failed to start shopping session. Please check if the backend server is running."
-      );
+      toast.error("Session failed to start");
     }
   };
 
   const handleProductDetected = async (product: ScannedProduct) => {
     try {
-      if (product._id.startsWith("mock")) {
-        console.log(" Adding mock product to cart:", product);
-        setCartItems((prevItems) => {
-          const existingItem = prevItems.find(
-            (item) => item._id === product._id
-          );
-
-          if (existingItem) {
-            return prevItems.map((item) =>
-              item._id === product._id
-                ? { ...item, quantity: item.quantity + 1 }
-                : item
-            );
-          } else {
-            // Add new item
-            return [...prevItems, { ...product, quantity: 1 }];
-          }
-        });
-        toast.success(`Added ${product.name} to cart!`);
-        return;
-      }
-
-      // Real API call for non-mock products
       const response = await fetch(`${API_BASE}/api/barcode/scan`, {
         method: "POST",
         headers: {
@@ -169,267 +126,197 @@ export default function ScannerPage() {
           shopId: selectedShop?._id,
         }),
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `HTTP ${response.status}: ${errorText || response.statusText}`
-        );
-      }
-
-      const data = await response.json();
-
       if (response.ok) {
-        // Reload session products to update cart
         await loadSessionProducts();
-        toast.success(`${product.name} added to cart`);
-      } else {
-        toast.error(data.message || "Failed to scan product");
+        toast.success(`${product.name} added`);
       }
     } catch (error) {
-      console.error("Scan error:", error);
-      toast.error("Failed to scan product");
+      toast.error("Scan failed");
     }
   };
 
-  // Update item quantity
   const updateQuantity = async (scannedProductId: string, quantity: number) => {
     try {
-      const response = await fetch(
-        `${API_BASE}/api/barcode/session/${sessionCode}/${scannedProductId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("hb_token")}`,
-          },
-          body: JSON.stringify({ quantity }),
-        }
-      );
-
+      const response = await fetch(`${API_BASE}/api/barcode/session/${sessionCode}/${scannedProductId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("hb_token")}`,
+        },
+        body: JSON.stringify({ quantity }),
+      });
       if (response.ok) {
-        setCartItems(
-          cartItems.map((item) =>
-            item._id === scannedProductId ? { ...item, quantity } : item
-          )
-        );
-      } else {
-        const errorText = await response.text();
-        toast.error(
-          `Failed to update quantity: ${errorText || response.statusText}`
-        );
+        setCartItems(cartItems.map(item => item._id === scannedProductId ? { ...item, quantity } : item));
       }
     } catch (error) {
-      console.error("Update quantity error:", error);
-      toast.error("Failed to update quantity");
+      toast.error("Update failed");
     }
   };
 
-  // Remove item from cart
   const removeItem = async (scannedProductId: string) => {
     try {
-      const response = await fetch(
-        `${API_BASE}/api/barcode/session/${sessionCode}/${scannedProductId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("hb_token")}`,
-          },
-        }
-      );
-
+      const response = await fetch(`${API_BASE}/api/barcode/session/${sessionCode}/${scannedProductId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${localStorage.getItem("hb_token")}` },
+      });
       if (response.ok) {
-        setCartItems(cartItems.filter((item) => item._id !== scannedProductId));
-        toast.success("Item removed from cart");
-      } else {
-        const errorText = await response.text();
-        toast.error(
-          `Failed to remove item: ${errorText || response.statusText}`
-        );
+        setCartItems(cartItems.filter(item => item._id !== scannedProductId));
+        toast.success("Removed");
       }
     } catch (error) {
-      console.error("Remove item error:", error);
-      toast.error("Failed to remove item");
+      toast.error("Remove failed");
     }
   };
 
-  // Proceed to checkout
   const handleCheckout = async () => {
     try {
-      // First convert session to cart
-      const convertResponse = await fetch(
-        `${API_BASE}/api/cart/convert-session`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("hb_token")}`,
-          },
-          body: JSON.stringify({
-            sessionCode,
-          }),
-        }
-      );
+      const convertRes = await fetch(`${API_BASE}/api/cart/convert-session`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("hb_token")}`,
+        },
+        body: JSON.stringify({ sessionCode }),
+      });
+      if (!convertRes.ok) throw new Error("Conversion failed");
 
-      if (!convertResponse.ok) {
-        const errorText = await convertResponse.text();
-        throw new Error(
-          `Failed to convert session to cart: ${
-            errorText || convertResponse.statusText
-          }`
-        );
-      }
-
-      // Now proceed with checkout using the cart
-      const checkoutResponse = await fetch(`${API_BASE}/api/orders/order`, {
+      const checkoutRes = await fetch(`${API_BASE}/api/orders/order`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("hb_token")}`,
         },
       });
-
-      if (!checkoutResponse.ok) {
-        const errorText = await checkoutResponse.text();
-        throw new Error(
-          `Checkout failed: ${errorText || checkoutResponse.statusText}`
-        );
+      if (checkoutRes.ok) {
+        toast.success("Order Placed!");
+        navigate("/customer/dashboard/orders");
       }
-
-      const checkoutData = await checkoutResponse.json();
-
-      if (checkoutResponse.ok) {
-        toast.success("Order placed successfully!");
-        // Clear local cart and redirect to orders page
-        setCartItems([]);
-        // You might want to redirect to orders page or receipt
-        window.location.href = "/customer/dashboard/orders";
-      } else {
-        throw new Error(checkoutData.message || "Checkout failed");
-      }
-    } catch (error) {
-      console.error("Checkout error:", error);
-      toast.error(error.message || "Checkout failed");
+    } catch (error: any) {
+      toast.error(error.message);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#EAEAEA]">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
+    <div className="space-y-8 max-w-7xl mx-auto">
+      {/* Mini Breadcrumb Header */}
+      <div className="flex items-center justify-between px-2">
+        <button 
+          onClick={() => navigate("/customer/dashboard/select-shop")}
+          className="group flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest hover:text-[#561485] transition-colors"
         >
-          <div className="flex items-center justify-center mb-6">
-            <div className="w-20 h-20 bg-gradient-to-br from-[#561485] to-[#3C47BA] rounded-full flex items-center justify-center shadow-xl">
-              <ScanLine className="h-10 w-10 text-white" />
-            </div>
-          </div>
-          <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-[#561485] to-[#3C47BA] bg-clip-text text-transparent mb-6">
-            Smart Shopping
-          </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Scan products with your camera and pay instantly
-          </p>
-        </motion.div>
+          <ChevronLeft className="w-4 h-4" />
+          Back to Store Selection
+        </button>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Live Shopping Session</span>
+        </div>
+      </div>
 
-        {/* Selected Shop Display */}
-        {selectedShop && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 mb-10 max-w-5xl mx-auto"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-[#561485] to-[#3C47BA] rounded-full flex items-center justify-center shadow-lg">
-                  <Store className="h-8 w-8 text-white" />
+      {/* Main Container */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full items-start">
+        {/* Scanner & Store Info */}
+        <div className="lg:col-span-7 space-y-6">
+          {/* Store Card (Minimal) */}
+          {selectedShop && (
+            <motion.section 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-[2rem] p-6 border border-gray-50 shadow-sm flex items-center justify-between"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-[#561485]/10 rounded-2xl flex items-center justify-center text-[#561485]">
+                  <Store className="w-6 h-6" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    Shopping at: {selectedShop.name}
-                  </h2>
-                  <p className="text-gray-600 flex items-center gap-2">
-                    <div className="w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center">
-                      <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                    </div>
-                    {selectedShop.address.street},{" "}
+                  <h2 className="text-lg font-black text-gray-900 tracking-tighter uppercase leading-none">{selectedShop.name}</h2>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
                     {selectedShop.address.city}, {selectedShop.address.state}
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => navigate("/customer/dashboard/select-shop")}
-                className="bg-gradient-to-r from-[#A13266] to-[#561485] text-white px-6 py-3 rounded-xl hover:from-[#A13266]/90 hover:to-[#561485]/90 transition-all duration-200 transform hover:scale-105 shadow-lg font-semibold"
-              >
-                Change Shop
-              </button>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
-          {/* Scanner Section */}
-          <div className="order-2 lg:order-1">
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-              <div className="bg-gradient-to-r from-[#561485] to-[#3C47BA] p-8">
-                <h2 className="text-2xl font-bold text-white flex items-center mb-3">
-                  Product Scanner
-                </h2>
-                <p className="text-white/90 text-lg">
-                  Point your camera at a barcode or use manual entry
-                </p>
+              <div className="hidden sm:block text-right">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Session ID</p>
+                <code className="text-[10px] font-bold text-[#561485] bg-[#561485]/5 px-2 py-1 rounded-lg">
+                  {sessionCode || "Initializing..."}
+                </code>
               </div>
-              <div className="p-8">
-                <BarcodeScanner
-                  onProductDetected={handleProductDetected}
-                  onError={(err) => toast.error(err)}
-                  shopId={selectedShop?._id}
-                />
-              </div>
-            </div>
-          </div>
+            </motion.section>
+          )}
 
-          {/* Cart Section */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-            className="order-1 lg:order-2"
+          {/* Scanner UI */}
+          <motion.section 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-gray-900 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-black/20"
           >
-            <div className="sticky top-6">
-              <Cart
-                items={cartItems}
-                onUpdateQuantity={updateQuantity}
-                onRemoveItem={removeItem}
-                onCheckout={handleCheckout}
-              />
+            <div className="p-8 border-b border-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-xl">
+                  <ScanLine className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-white font-black uppercase tracking-widest text-sm">Product Scanner</h3>
+              </div>
+              <div className="flex gap-2">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]"></div>
+              </div>
             </div>
-          </motion.div>
+            <div className="p-4 md:p-8 aspect-video relative">
+              <BarcodeScanner
+                onProductDetected={handleProductDetected}
+                onError={(err) => toast.error(err)}
+                shopId={selectedShop?._id}
+              />
+              {/* Scan Overlay Hints */}
+              <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
+                <div className="w-64 h-64 border-2 border-dashed border-white/20 rounded-3xl mb-4"></div>
+                <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Align barcode within frame</p>
+              </div>
+            </div>
+            <div className="p-6 bg-white/5 flex items-center justify-center gap-6">
+              <div className="flex items-center gap-2 text-white/40">
+                <Info className="w-3 h-3" />
+                <span className="text-[9px] font-bold uppercase tracking-widest">Auto Flash Enabled</span>
+              </div>
+              <div className="flex items-center gap-2 text-white/40">
+                <LayoutGrid className="w-3 h-3" />
+                <span className="text-[9px] font-bold uppercase tracking-widest">Resolution HD</span>
+              </div>
+            </div>
+          </motion.section>
+
+          {/* Help/Support (Minimal) */}
+          <div className="p-8 bg-white rounded-[2rem] border border-gray-50 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400">
+                <RefreshCw className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs font-black text-gray-900 uppercase tracking-tighter">Connection Stable</p>
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Real-time sync active</p>
+              </div>
+            </div>
+            <button className="text-[10px] font-black text-[#561485] uppercase tracking-tighter bg-[#561485]/5 px-4 py-2 rounded-xl">Need Support?</button>
+          </div>
         </div>
 
-        {/* Session Info */}
-        {sessionCode && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="mt-8 text-center"
+        {/* Live Cart Summary */}
+        <div className="lg:col-span-5 h-full">
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            className="sticky top-28"
           >
-            <div className="inline-flex items-center bg-white rounded-full px-8 py-4 shadow-lg border border-gray-100">
-              <RefreshCw className="h-5 w-5 text-[#561485] mr-3" />
-              <span className="text-gray-600 mr-3 font-medium">
-                Active Session:
-              </span>
-              <code className="bg-gradient-to-r from-[#561485]/10 to-[#3C47BA]/10 text-[#561485] px-4 py-2 rounded-full text-sm font-mono font-semibold">
-                {sessionCode}
-              </code>
-            </div>
+            <Cart
+              items={cartItems}
+              onUpdateQuantity={updateQuantity}
+              onRemoveItem={removeItem}
+              onCheckout={handleCheckout}
+            />
           </motion.div>
-        )}
+        </div>
       </div>
     </div>
   );
