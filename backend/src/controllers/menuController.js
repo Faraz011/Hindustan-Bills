@@ -130,14 +130,17 @@ export const getCart = asyncHandler(async (req, res) => {
   });
 
   const total = subtotal; 
-  const shopUpiId = cart.items[0]?.product?.shop?.metadata?.upiId;
+  const shop = cart.items[0]?.product?.shop;
+  const upiId = shop?.metadata?.upiId;
+  const shopName = shop?.name;
 
   res.json({
     items,
     subtotal,
     tax,
     total,
-    shopUpiId,
+    upiId,
+    shopName,
   });
 });
 

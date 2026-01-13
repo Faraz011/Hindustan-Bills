@@ -1,34 +1,30 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { 
   ArrowLeft, 
   ShieldCheck, 
-  Zap, 
   Info, 
-  ChevronRight,
-  Smartphone,
   QrCode,
+  ExternalLink,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { QRCodeSVG } from "qrcode.react";
 import api from "../../../../api/axios";
-import PaymentScanner from "../components/PaymentScanner";
 
 interface MenuCartData {
   items: any[];
   subtotal: number;
   tax: number;
   total: number;
-  shopUpiId?: string;
+  upiId?: string;
+  shopName?: string;
 }
 
 export default function UpiPaymentPage() {
-  const [upiId, setUpiId] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [cart, setCart] = useState<MenuCartData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [paymentMode, setPaymentMode] = useState<'intent' | 'collect'>('intent');
-  const [showScanner, setShowScanner] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -48,86 +44,45 @@ export default function UpiPaymentPage() {
     }
   };
 
+  const handlePayViaApp = () => {
+    const upiUri = getUpiUri();
+    if (!upiUri) return;
 
-  const handleIntentPay = () => {
-    console.log("handleIntentPay triggered");
-    toast.dismiss();
-    toast.loading("Starting Scanner...", { duration: 1000 });
-    setShowScanner(true);
-  };
-
-  const handleScanSuccess = async (scannedData: string) => {
-    setIsProcessing(true);
     try {
-      let extractedUpiId = cart?.shopUpiId;
+      const upiLink = document.createElement('a');
+      upiLink.href = upiUri;
+      upiLink.style.display = 'none';
+      document.body.appendChild(upiLink);
+      upiLink.click();
+      document.body.removeChild(upiLink);
       
-      if (scannedData.startsWith("upi://pay")) {
-        const urlParams = new URLSearchParams(scannedData.split("?")[1]);
-        const pa = urlParams.get("pa");
-        if (pa) {
-          extractedUpiId = pa;
-        }
-      }
-
-      // Submit order to backend
-      await api.post("/api/orders/create-from-cart", { 
-        upiId: extractedUpiId, 
-        paymentMode: 'intent',
-        qrData: scannedData 
-      });
-      
-      // Redirect to UPI App
-      if (scannedData.startsWith("upi://pay")) {
-        console.log("Redirecting to UPI Intent:", scannedData);
-        
-        // Attempt redirection using a more reliable method for mobile deep links
-        try {
-          const upiLink = document.createElement('a');
-          upiLink.href = scannedData;
-          upiLink.style.display = 'none';
-          document.body.appendChild(upiLink);
-          upiLink.click();
-          document.body.removeChild(upiLink);
-          
-          toast.success("Opening UPI App...");
-        } catch (e) {
-          console.error("Redirection error:", e);
-          // Fallback if click fails
-          window.location.href = scannedData;
-        }
-      } else {
-        toast.error("Not a valid UPI payment QR code");
-        return;
-      }
-      
-      // Navigate to orders after a longer delay to ensure protocol launch isn't interrupted
-      setTimeout(() => {
-        navigate("/customer/dashboard/orders");
-      }, 5000);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to complete payment");
-    } finally {
-      setIsProcessing(false);
+      toast.success("Opening UPI App...");
+    } catch (e) {
+      console.error("Redirection error:", e);
+      window.location.href = upiUri;
     }
   };
 
-  const handleCollectSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!upiId.trim() || !upiId.includes("@")) {
-      toast.error("Please enter a valid UPI ID");
-      return;
-    }
-
+  const handleConfirmOrder = async () => {
     setIsProcessing(true);
     try {
+      const upiId = cart?.upiId || "9691383552@ybl";
       await api.post("/api/orders/create-from-cart", { upiId, paymentMode: 'collect' });
-      toast.success("Payment Request Sent!");
+      toast.success("Order Placed! Please ensure payment is done.");
       navigate("/customer/dashboard/orders");
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Payment request failed");
+      toast.error(error.response?.data?.message || "Order placement failed");
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const getUpiUri = () => {
+    if (!cart) return "";
+    const shopName = cart.shopName || "Merchant";
+    const amount = cart.total;
+    const upiId = cart.upiId || "merchant@upi";
+    return `upi://pay?pa=${upiId}&pn=${encodeURIComponent(shopName)}&am=${amount}&cu=INR&tn=Order_from_HindustanBills`;
   };
 
   if (loading) {
@@ -152,140 +107,81 @@ export default function UpiPaymentPage() {
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-emerald-500" />
-            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Secure Flow</span>
+            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Safe Checkout</span>
           </div>
         </div>
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-        {/* Payment Options */}
+        {/* Payment Main Area */}
         <section className="space-y-10">
           <div className="space-y-2">
-            <h1 className="text-5xl font-black text-gray-900 tracking-tighter uppercase leading-none">Checkout</h1>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Powered by Hindustan Bills P2P Flow</p>
+            <h1 className="text-5xl font-black text-gray-900 tracking-tighter uppercase leading-none">Payment</h1>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Open your upi app and scan the qr code to pay</p>
           </div>
 
-          {/* Mode Selector */}
-          <div className="flex bg-gray-50 p-1.5 rounded-[1.5rem] border border-gray-100">
-            <button 
-              onClick={() => setPaymentMode('intent')}
-              className={`flex-1 py-4 px-6 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${paymentMode === 'intent' ? 'bg-white shadow-xl shadow-black/5 text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
+          <div className="space-y-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center gap-6 p-10 bg-white rounded-[2.5rem] border-2 border-gray-100 shadow-xl shadow-black/5 relative overflow-hidden"
             >
-              Scan & Pay
-            </button>
-            <button 
-              onClick={() => setPaymentMode('collect')}
-              className={`flex-1 py-4 px-6 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${paymentMode === 'collect' ? 'bg-white shadow-xl shadow-black/5 text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
-            >
-              Collect Request
-            </button>
-          </div>
+              <div className="absolute top-0 right-0 p-8 opacity-5">
+                <QrCode className="w-24 h-24" />
+              </div>
+              
+              <div className="p-6 bg-gray-50 rounded-[2rem] border-2 border-gray-100 shadow-inner">
+                <QRCodeSVG 
+                  value={getUpiUri()}
+                  size={200}
+                  level="H"
+                  includeMargin={false}
+                  className="rounded-xl"
+                />
+              </div>
 
-          <AnimatePresence mode="wait">
-            {paymentMode === 'intent' ? (
-              <motion.div
-                key="intent"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                className="space-y-8"
-              >
-                <div className="grid grid-cols-3 gap-4">
-                  {[
-                    { name: 'PhonePe', color: 'bg-[#5f259f]' },
-                    { name: 'GPay', color: 'bg-[#4285F4]' },
-                    { name: 'Paytm', color: 'bg-[#00BAF2]' }
-                  ].map((app) => (
-                    <div key={app.name} className="flex flex-col items-center gap-3">
-                      <div className={`w-14 h-14 ${app.color} rounded-2xl flex items-center justify-center shadow-lg shadow-black/5`}>
-                        <Smartphone className="w-6 h-6 text-white" />
-                      </div>
-                      <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{app.name}</span>
-                    </div>
-                  ))}
-                </div>
+              <div className="text-center space-y-2">
+                <p className="text-[#561485] font-bold tracking-tighter uppercase">Scan to Pay</p>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">
+                  Pay <span className="text-[#561485]">₹{cart?.total?.toFixed(0)}</span> using any UPI app
+                </p>
+              </div>
 
-                <div className="p-8 bg-gray-900 rounded-[2.5rem] text-white space-y-6 relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
-                    <QrCode className="w-32 h-32" />
-                  </div>
-                  <div className="relative z-10 space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
-                        <Smartphone className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">Safe & Direct</p>
-                        <p className="text-base font-black tracking-tight">Scan Merchant QR</p>
-                      </div>
-                    </div>
-                    <p className="text-xs text-white/50 font-medium leading-relaxed">
-                      Scan the merchant's physical QR code at the counter to complete your payment instantly.
-                    </p>
-                  </div>
-                  <button
-                    onClick={handleIntentPay}
-                    disabled={isProcessing || !cart || cart.items.length === 0}
-                    className="w-full py-5 bg-white text-gray-900 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:bg-emerald-400 transition-all active:scale-95 shadow-xl shadow-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isProcessing ? (
-                      <div className="w-5 h-5 border-2 border-gray-900/20 border-t-gray-900 rounded-full animate-spin"></div>
-                    ) : (
-                      <>
-                        Scan to Pay ₹{cart?.total?.toFixed(0) || "0"} <QrCode className="w-4 h-4" />
-                      </>
-                    )}
-                  </button>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.form
-                key="collect"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                onSubmit={handleCollectSubmit}
-                className="space-y-6"
-              >
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2 font-black">Your UPI Identifier</label>
-                  <div className="relative group">
-                    <div className="absolute left-6 top-1/2 -translate-y-1/2">
-                      <Zap className={`w-5 h-5 transition-colors ${upiId.includes('@') ? 'text-[#561485]' : 'text-gray-300'}`} />
-                    </div>
-                    <input
-                      type="text"
-                      value={upiId}
-                      onChange={(e) => setUpiId(e.target.value)}
-                      placeholder="username@bank"
-                      className="w-full pl-16 pr-6 py-6 bg-white border-2 border-gray-100 rounded-[2rem] text-lg font-black tracking-tight focus:border-[#561485] focus:ring-4 focus:ring-[#561485]/5 transition-all outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="p-6 bg-[#561485]/5 rounded-2xl border border-[#561485]/10 flex gap-4">
-                  <Info className="w-5 h-5 text-[#561485] flex-shrink-0" />
-                  <p className="text-[10px] font-bold text-[#561485]/60 uppercase leading-relaxed tracking-wide">
-                    Retailer will send a collect request to this ID. You'll need to open your app and approve it.
-                  </p>
-                </div>
-
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                 <button
-                  type="submit"
-                  disabled={isProcessing || !upiId.trim()}
-                  className="w-full py-6 bg-gray-900 text-white rounded-[2rem] font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 shadow-2xl shadow-black/10 hover:bg-[#561485] transition-all"
+                  onClick={handlePayViaApp}
+                  className="py-5 bg-white border-2 border-gray-100 text-gray-900 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 hover:border-emerald-400 transition-all active:scale-95 shadow-lg shadow-black/5"
+                >
+                  Open UPI App <ExternalLink className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={handleConfirmOrder}
+                  disabled={isProcessing || !cart}
+                  className="py-5 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 shadow-xl shadow-black/10 hover:bg-emerald-500 transition-all active:scale-95 disabled:opacity-50"
                 >
                   {isProcessing ? (
-                    <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
                   ) : (
                     <>
-                      Send Request <ChevronRight className="w-4 h-4" />
+                      I've Paid <ShieldCheck className="w-4 h-4" />
                     </>
                   )}
                 </button>
-              </motion.form>
-            )}
-          </AnimatePresence>
+              </div>
+            </motion.div>
+
+            <div className="p-6 bg-[#561485]/5 rounded-2xl border border-[#561485]/10 flex gap-4">
+              <Info className="w-5 h-5 text-[#561485] flex-shrink-0" />
+              <div className="space-y-1">
+                <p className="text-[10px] font-black text-[#561485] uppercase tracking-widest">How to play?</p>
+                <p className="text-[10px] font-bold text-[#561485]/60 uppercase leading-relaxed tracking-wide">
+                  1. Scan the QR code or click 'Open UPI App'.<br/>
+                  2. Complete the payment in your bank app.<br/>
+                  3. Click 'I've Paid' to finalize your order.
+                </p>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* Summary Card */}
@@ -293,11 +189,13 @@ export default function UpiPaymentPage() {
           <div className="bg-white rounded-[3rem] border border-gray-50 p-10 shadow-xl shadow-[#561485]/5 flex flex-col gap-8">
             <div className="space-y-4">
               <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Order Summary</h3>
-              <div className="space-y-4 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+              <div className="space-y-4 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
                 {cart?.items.map((item, idx) => (
                   <div key={idx} className="flex justify-between items-center text-xs">
                     <div className="flex items-center gap-3">
-                      <span className="text-[10px] font-black text-gray-400">0{idx + 1}</span>
+                      <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center text-[10px] font-black text-gray-400">
+                        {idx + 1}
+                      </div>
                       <span className="font-bold text-gray-600 uppercase tracking-tight">{item.name} <span className="text-[10px] text-gray-400">x{item.quantity}</span></span>
                     </div>
                     <span className="font-black text-gray-900">₹{((item.price || 0) * (item.quantity || 1)).toFixed(0)}</span>
@@ -324,18 +222,11 @@ export default function UpiPaymentPage() {
             </div>
             <div>
               <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-1">Guaranteed Safety</p>
-              <p className="text-xs font-bold text-emerald-600/60 uppercase tracking-tighter leading-none">Verified Merchant Account</p>
+              <p className="text-xs font-bold text-emerald-600/60 uppercase tracking-tighter leading-none">P2P Verified Transaction</p>
             </div>
           </div>
         </section>
       </div>
-
-      {showScanner && (
-        <PaymentScanner 
-          onScanSuccess={handleScanSuccess}
-          onClose={() => setShowScanner(false)}
-        />
-      )}
     </div>
   );
 }
