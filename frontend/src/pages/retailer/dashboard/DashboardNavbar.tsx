@@ -1,15 +1,16 @@
-// frontend/src/components/DashboardNavbar.tsx
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
-  User,
   LogOut,
   Menu,
   X,
   SidebarOpen,
   SidebarClose,
+  Bell,
+  Package,
 } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface User {
   id: string;
@@ -39,20 +40,18 @@ export default function DashboardNavbar({
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get user info from JWT token
     const token = localStorage.getItem("hb_token");
     if (token) {
       try {
         const decoded: JWTPayload = jwtDecode(token);
         setUser({
           id: decoded.id,
-          name: decoded.name || "User",
+          name: decoded.name || "Retailer",
           email: decoded.email || "",
-          role: decoded.role || "user",
+          role: decoded.role || "retailer",
         });
       } catch (error) {
         console.error("Error decoding token:", error);
-        // Fallback: try to get from localStorage or redirect to login
         localStorage.removeItem("hb_token");
         navigate("/login");
       }
@@ -65,13 +64,12 @@ export default function DashboardNavbar({
   };
 
   return (
-    <nav className="bg-white border-b border-gray-100 px-4 py-3 shadow-sm">
+    <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-40 px-6 py-4 border-b border-gray-50">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
-        {/* Logo/Brand */}
-        <div className="flex items-center">
+        <div className="flex items-center gap-4">
           <button
             onClick={onToggleSidebar}
-            className="mr-3 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-all duration-200"
+            className="p-2.5 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-all duration-300"
             title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
           >
             {sidebarOpen ? (
@@ -80,102 +78,93 @@ export default function DashboardNavbar({
               <SidebarOpen className="h-5 w-5" />
             )}
           </button>
-          <Link
-            to="/retailer/dashboard"
-            className="text-xl font-bold text-gray-900"
-          >
-            Retailer
-          </Link>
-          <span className="ml-2 text-sm text-white bg-gradient-to-r from-[#561485] to-[#3C47BA] px-3 py-1 rounded-full hidden sm:inline">
-            Dashboard
-          </span>
+          
+          <div className="hidden sm:flex items-center gap-2">
+            <span className="text-xl font-black text-gray-900 tracking-tighter uppercase">
+              Retailer
+            </span>
+            <div className="w-1 h-1 bg-gray-300 rounded-full mx-1"></div>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+              Control Panel
+            </span>
+          </div>
         </div>
 
-        {/* Desktop User Info & Actions */}
-        <div className="hidden md:flex items-center space-x-4">
-          {/* Welcome Message */}
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-[#561485] to-[#3C47BA] rounded-full flex items-center justify-center shadow-md">
-              <span className="text-white font-semibold text-sm">
-                {(user?.name || "U").charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div className="text-sm">
-              <p className="text-gray-600">Welcome back,</p>
-              <p className="font-medium text-gray-900">
-                {user?.name || "User"}
+        <div className="flex items-center gap-3">
+          {/* Notifications */}
+          <button className="p-2.5 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-all duration-300 relative group">
+            <Bell className="h-5 w-5 group-hover:rotate-12 transition-transform" />
+            <span className="absolute top-2.5 right-2.5 h-2 w-2 bg-[#A13266] rounded-full ring-2 ring-white"></span>
+          </button>
+
+          <div className="h-8 w-px bg-gray-100 mx-2 hidden md:block"></div>
+
+          {/* Desktop User Section */}
+          <div className="hidden md:flex items-center gap-4 pl-2">
+            <div className="text-right">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Store Owner</p>
+              <p className="text-sm font-bold text-gray-900 leading-none">
+                {user?.name || "Retailer Account"}
               </p>
+            </div>
+            <div className="w-10 h-10 bg-gradient-to-br from-[#561485] to-[#3C47BA] rounded-xl flex items-center justify-center shadow-lg shadow-[#561485]/10 border border-white/20">
+              <span className="text-white font-black text-xs">
+                {(user?.name || "R").charAt(0).toUpperCase()}
+              </span>
             </div>
           </div>
 
-          {/* Logout Button */}
           <button
             onClick={handleLogout}
-            className="inline-flex items-center px-4 py-2 border border-gray-200 rounded-lg shadow-sm text-sm font-medium text-gray-600 bg-white hover:bg-[#A13266] hover:border-[#A13266] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#A13266] transition-all duration-200"
+            className="md:ml-4 p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-300"
+            title="Logout"
           >
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
+            <LogOut className="h-5 w-5" />
           </button>
-        </div>
 
-        {/* Mobile menu button */}
-        <div className="md:hidden">
+          {/* Mobile menu button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#561485] p-2 transition-all duration-200"
+            className="md:hidden p-2.5 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-all duration-300"
           >
             {isMobileMenuOpen ? (
-              <X className="h-6 w-6" />
+              <X className="h-5 w-5" />
             ) : (
-              <Menu className="h-6 w-6" />
+              <Menu className="h-5 w-5" />
             )}
           </button>
         </div>
       </div>
 
       {/* Mobile menu */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-gray-100 pt-4 pb-3">
-          <div className="px-2 space-y-1">
-            {/* Sidebar Toggle */}
-            <button
-              onClick={onToggleSidebar}
-              className="flex items-center w-full px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all duration-200"
-            >
-              {sidebarOpen ? (
-                <SidebarClose className="h-5 w-5 mr-3" />
-              ) : (
-                <SidebarOpen className="h-5 w-5 mr-3" />
-              )}
-              {sidebarOpen ? "Hide Sidebar" : "Show Sidebar"}
-            </button>
-
-            {/* Welcome Message */}
-            <div className="flex items-center space-x-2 px-3 py-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-[#561485] to-[#3C47BA] rounded-full flex items-center justify-center shadow-md">
-                <span className="text-white font-semibold text-sm">
-                  {(user?.name || "U").charAt(0).toUpperCase()}
-                </span>
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-100 p-6 shadow-xl space-y-4"
+          >
+            <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-2xl">
+              <div className="w-12 h-12 bg-[#561485] rounded-xl flex items-center justify-center text-white font-bold">
+                {(user?.name || "R").charAt(0).toUpperCase()}
               </div>
-              <div className="text-sm">
-                <p className="text-gray-500">Welcome back,</p>
-                <p className="font-medium text-gray-900">
-                  {user?.name || "User"}
-                </p>
+              <div>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Store Manager</p>
+                <p className="text-base font-bold text-gray-900">{user?.name || "Retailer Account"}</p>
               </div>
             </div>
-
-            {/* Logout Button */}
+            
             <button
               onClick={handleLogout}
-              className="flex items-center w-full px-3 py-2 text-base font-medium text-gray-600 hover:text-white hover:bg-[#A13266] transition-all duration-200 rounded-lg"
+              className="flex items-center justify-center w-full gap-2 p-4 text-red-600 bg-red-50 font-bold rounded-2xl transition-all active:scale-95"
             >
-              <LogOut className="h-5 w-5 mr-3" />
-              Logout
+              <LogOut className="h-5 w-5" />
+              Logout Outlet
             </button>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }

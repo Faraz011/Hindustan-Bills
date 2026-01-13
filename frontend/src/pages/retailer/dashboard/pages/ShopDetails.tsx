@@ -1,9 +1,20 @@
-// frontend/src/pages/retailor/dashboard/shop-details.tsx
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { getShopDetails, updateShopDetails } from "../../../../lib/api";
 import { toast } from "react-hot-toast";
-import { Pencil, Check, X } from "lucide-react";
+import { 
+  Pencil, 
+  X, 
+  Store, 
+  MapPin, 
+  ShieldCheck, 
+  Globe, 
+  Building2,
+  Save,
+  Tag,
+  Hash
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ShopFormData {
   name: string;
@@ -18,10 +29,10 @@ interface ShopFormData {
   metadata?: {
     fssaiLicense?: string;
     gstNumber?: string;
+    upiId?: string;
   };
 }
 
-// Update the component
 export default function ShopDetails() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
@@ -38,9 +49,7 @@ export default function ShopDetails() {
   useEffect(() => {
     const loadShopDetails = async () => {
       try {
-        console.log("Attempting to load shop details...");
         const data = await getShopDetails();
-        console.log("Shop data loaded successfully:", data);
         setShopData(data);
         setIsCreating(false);
         reset({
@@ -56,13 +65,12 @@ export default function ShopDetails() {
           metadata: {
             gstNumber: data.metadata?.gstNumber || "",
             fssaiLicense: data.metadata?.fssaiLicense || "",
+            upiId: data.metadata?.upiId || "",
           },
         });
         setBusinessType(data.businessType || "retail");
       } catch (error: any) {
-        console.log("Error loading shop details:", error);
         if (error.response?.status === 404) {
-          console.log("Shop not found, switching to create mode");
           setIsCreating(true);
           setIsEditing(true);
           setShopData(null);
@@ -105,14 +113,12 @@ export default function ShopDetails() {
         setIsCreating(false);
       }
     } catch (error) {
-      console.error("Error saving shop details:", error);
       toast.error("Failed to save shop details");
     }
   };
 
   const handleCancel = () => {
     if (isCreating) {
-      // Reset to empty form
       reset({
         businessType: "retail",
         address: {
@@ -125,7 +131,6 @@ export default function ShopDetails() {
       });
       setBusinessType("retail");
     } else {
-      // Reset to original data
       reset({
         name: shopData?.name || "",
         businessType: shopData?.businessType || "retail",
@@ -139,6 +144,7 @@ export default function ShopDetails() {
         metadata: {
           gstNumber: shopData?.metadata?.gstNumber || "",
           fssaiLicense: shopData?.metadata?.fssaiLicense || "",
+          upiId: shopData?.metadata?.upiId || "",
         },
       });
       setBusinessType(shopData?.businessType || "retail");
@@ -148,80 +154,83 @@ export default function ShopDetails() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="w-12 h-12 border-4 border-[#561485]/20 border-t-[#561485] rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              {isCreating ? "Create Your Shop" : "Shop Details"}
+    <div className="max-w-5xl mx-auto space-y-12 pb-20">
+      {/* Header Profile Section */}
+      <section className="relative overflow-hidden rounded-[3rem] bg-gradient-to-br from-[#561485] via-[#3C47BA] to-[#A13266] p-8 md:p-16 text-white shadow-2xl shadow-[#561485]/20">
+        <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
+          <div className="w-32 h-32 md:w-40 md:h-40 bg-white/10 backdrop-blur-xl rounded-[2.5rem] flex items-center justify-center border border-white/20 shadow-inner">
+            <Store className="w-16 h-16 md:w-20 md:h-20 text-white" />
+          </div>
+          <div className="text-center md:text-left space-y-4">
+            <div className="inline-flex items-center px-4 py-1.5 bg-white/10 rounded-full border border-white/10 text-[10px] font-black uppercase tracking-widest">
+              Business Profile
+            </div>
+            <h1 className="text-4xl md:text-6xl font-black tracking-tighter uppercase leading-none">
+              {shopData?.name || "Your Store"}
             </h1>
-            <p className="text-gray-600 mt-2">
-              {isCreating
-                ? "Set up your shop information to get started."
-                : "Manage your shop information and settings."}
+            <p className="text-white/60 font-medium tracking-wide flex items-center justify-center md:justify-start gap-2">
+              <Building2 className="w-4 h-4" /> {shopData?.businessType?.toUpperCase() || "RETAIL"} PARTNER
             </p>
           </div>
-          {!isCreating && !isEditing && (
-            <button
+          {!isEditing && !isCreating && (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setIsEditing(true)}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="md:ml-auto px-8 py-4 bg-white text-[#561485] rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-black/10 transition-all flex items-center gap-2"
             >
-              <Pencil className="h-4 w-4 mr-2" />
-              Edit Details
-            </button>
+              <Pencil className="w-4 h-4" /> Edit Details
+            </motion.button>
           )}
         </div>
-      </div>
+        {/* Abstract Background Elements */}
+        <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/5 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-[#3C47BA]/20 rounded-full blur-3xl" />
+      </section>
 
-      {/* Form */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="divide-y divide-gray-200"
-        >
-          {/* Shop Name */}
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">
-                Shop Information
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Shop Name
-                </label>
-                {isEditing || isCreating ? (
-                  <input
-                    type="text"
-                    {...register("name", { required: true })}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="Enter shop name"
-                  />
-                ) : (
-                  <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md">
-                    {shopData?.name || "Not set"}
-                  </p>
-                )}
+      <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div className="lg:col-span-2 space-y-10 focus-within:ring-0">
+          {/* Basic Info Section */}
+          <section className="bg-white rounded-[2.5rem] border border-gray-50 shadow-sm p-8 md:p-12 space-y-8">
+            <div className="flex items-center gap-4 pb-6 border-b border-gray-50">
+              <div className="w-12 h-12 bg-primary-50 rounded-2xl flex items-center justify-center">
+                <Tag className="w-6 h-6 text-[#561485]" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Business Type
-                </label>
+                <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Identity</h3>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Basic shop information</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Shop Name</label>
+                {isEditing || isCreating ? (
+                  <input
+                    {...register("name", { required: true })}
+                    className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:bg-white focus:border-[#561485]/20 focus:outline-none transition-all"
+                  />
+                ) : (
+                  <div className="px-6 py-4 bg-gray-50 rounded-2xl text-sm font-black text-gray-900 uppercase tracking-tight">
+                    {shopData?.name || "N/A"}
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Type of Business</label>
                 {isEditing || isCreating ? (
                   <select
                     {...register("businessType", { required: true })}
                     value={businessType}
                     onChange={(e) => setBusinessType(e.target.value)}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:bg-white focus:border-[#561485]/20 focus:outline-none transition-all appearance-none"
                   >
                     <option value="retail">Retail Store</option>
                     <option value="grocery">Grocery Store</option>
@@ -232,179 +241,188 @@ export default function ShopDetails() {
                     <option value="other">Other</option>
                   </select>
                 ) : (
-                  <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md capitalize">
-                    {shopData?.businessType || "Not set"}
-                  </p>
+                  <div className="px-6 py-4 bg-gray-50 rounded-2xl text-sm font-black text-gray-900 uppercase tracking-tight">
+                    {shopData?.businessType || "N/A"}
+                  </div>
                 )}
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* Address */}
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Address</h3>
-            </div>
-            <div className="grid grid-cols-1 gap-6">
-              {isEditing || isCreating ? (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Street Address
-                    </label>
-                    <input
-                      type="text"
-                      {...register("address.street", { required: true })}
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                      placeholder="Enter street address"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        City
-                      </label>
-                      <input
-                        type="text"
-                        {...register("address.city", { required: true })}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                        placeholder="Enter city"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        State
-                      </label>
-                      <input
-                        type="text"
-                        {...register("address.state", { required: true })}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                        placeholder="Enter state"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Pincode
-                      </label>
-                      <input
-                        type="text"
-                        {...register("address.pincode", { required: true })}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                        placeholder="Enter pincode"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Country
-                      </label>
-                      <input
-                        type="text"
-                        {...register("address.country", { required: true })}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                        placeholder="Enter country"
-                      />
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="bg-gray-50 rounded-md p-4">
-                  <p className="text-sm text-gray-900">
-                    {shopData?.address ? (
-                      <>
-                        {shopData.address.street}
-                        <br />
-                        {shopData.address.city}, {shopData.address.state} -{" "}
-                        {shopData.address.pincode}
-                        <br />
-                        {shopData.address.country}
-                      </>
-                    ) : (
-                      "Address not set"
-                    )}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Tax Information */}
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">
-                Tax Information
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          {/* Location Section */}
+          <section className="bg-white rounded-[2.5rem] border border-gray-50 shadow-sm p-8 md:p-12 space-y-8">
+            <div className="flex items-center gap-4 pb-6 border-b border-gray-50">
+              <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
+                <MapPin className="w-6 h-6 text-[#3C47BA]" />
+              </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  GST Number
+                <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Location</h3>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Physical store address</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="md:col-span-2 space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Street Address</label>
+                {isEditing || isCreating ? (
+                  <input
+                    {...register("address.street", { required: true })}
+                    className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:bg-white focus:border-[#561485]/20 focus:outline-none transition-all"
+                  />
+                ) : (
+                  <div className="px-6 py-4 bg-gray-50 rounded-2xl text-sm font-black text-gray-900 uppercase tracking-tight">
+                    {shopData?.address?.street || "N/A"}
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">City</label>
+                {isEditing || isCreating ? (
+                  <input
+                    {...register("address.city", { required: true })}
+                    className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:bg-white focus:border-[#561485]/20 focus:outline-none transition-all"
+                  />
+                ) : (
+                  <div className="px-6 py-4 bg-gray-50 rounded-2xl text-sm font-black text-gray-900 uppercase tracking-tight">
+                    {shopData?.address?.city || "N/A"}
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">State / Province</label>
+                {isEditing || isCreating ? (
+                  <input
+                    {...register("address.state", { required: true })}
+                    className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:bg-white focus:border-[#561485]/20 focus:outline-none transition-all"
+                  />
+                ) : (
+                  <div className="px-6 py-4 bg-gray-50 rounded-2xl text-sm font-black text-gray-900 uppercase tracking-tight">
+                    {shopData?.address?.state || "N/A"}
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Pincode</label>
+                {isEditing || isCreating ? (
+                  <input
+                    {...register("address.pincode", { required: true })}
+                    className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:bg-white focus:border-[#561485]/20 focus:outline-none transition-all"
+                  />
+                ) : (
+                  <div className="px-6 py-4 bg-gray-50 rounded-2xl text-sm font-black text-gray-900 uppercase tracking-tight">
+                    {shopData?.address?.pincode || "N/A"}
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Country</label>
+                {isEditing || isCreating ? (
+                  <input
+                    {...register("address.country", { required: true })}
+                    className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:bg-white focus:border-[#561485]/20 focus:outline-none transition-all"
+                  />
+                ) : (
+                  <div className="px-6 py-4 bg-gray-50 rounded-2xl text-sm font-black text-gray-900 uppercase tracking-tight">
+                    {shopData?.address?.country || "N/A"}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        </div>
+
+        {/* Sidebar Info */}
+        <div className="space-y-10">
+          {/* Compliance & Tax Section */}
+          <section className="bg-white rounded-[2.5rem] border border-gray-50 shadow-sm p-8 md:p-10 space-y-8">
+            <div className="flex items-center gap-4 pb-6 border-b border-gray-50">
+              <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center">
+                <ShieldCheck className="w-6 h-6 text-emerald-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Tax & Legal</h3>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Compliance details</p>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                  <Hash className="w-3 h-3" /> GST Number
                 </label>
                 {isEditing || isCreating ? (
                   <input
-                    type="text"
                     {...register("metadata.gstNumber")}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="Enter GST number"
+                    placeholder="29AAAAA0000A1Z5"
+                    className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl text-xs font-bold focus:bg-white focus:border-[#561485]/20 focus:outline-none transition-all"
                   />
                 ) : (
-                  <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md">
-                    {shopData?.metadata?.gstNumber || "Not set"}
-                  </p>
+                  <div className="px-6 py-4 bg-gray-50 rounded-2xl text-xs font-black text-gray-900 uppercase tracking-tight">
+                    {shopData?.metadata?.gstNumber || "Not Provided"}
+                  </div>
                 )}
               </div>
+
               {businessType === "restaurant" && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    FSSAI License
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                    <ShieldCheck className="w-3 h-3" /> FSSAI License
                   </label>
                   {isEditing || isCreating ? (
                     <input
-                      type="text"
                       {...register("metadata.fssaiLicense")}
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                      placeholder="Enter FSSAI license"
+                      placeholder="12345678901234"
+                      className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl text-xs font-bold focus:bg-white focus:border-[#561485]/20 focus:outline-none transition-all"
                     />
                   ) : (
-                    <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md">
-                      {shopData?.metadata?.fssaiLicense || "Not set"}
-                    </p>
+                    <div className="px-6 py-4 bg-gray-50 rounded-2xl text-xs font-black text-gray-900 uppercase tracking-tight">
+                      {shopData?.metadata?.fssaiLicense || "Not Provided"}
+                    </div>
                   )}
                 </div>
               )}
-            </div>
-          </div>
 
-          {/* Actions */}
-          {(isEditing || isCreating) && (
-            <div className="px-6 py-4 bg-gray-50 flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Check className="h-4 w-4 mr-2" />
-                {isSubmitting
-                  ? isCreating
-                    ? "Creating..."
-                    : "Saving..."
-                  : isCreating
-                  ? "Create Shop"
-                  : "Save Changes"}
-              </button>
+              <div className="space-y-4 pt-4">
+                <div className="flex items-center gap-3 p-4 bg-[#561485]/5 rounded-2xl border border-[#561485]/10">
+                  <Globe className="w-5 h-5 text-[#561485]" />
+                  <div>
+                    <p className="text-[10px] font-black text-[#561485] uppercase tracking-widest">Region</p>
+                    <p className="text-xs font-bold text-gray-900 uppercase">Asia-Pacific (India)</p>
+                  </div>
+                </div>
+              </div>
             </div>
-          )}
-        </form>
-      </div>
+          </section>
+
+          {/* Action Buttons */}
+          <AnimatePresence>
+            {(isEditing || isCreating) && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                className="space-y-4"
+              >
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-5 bg-gray-900 text-white rounded-[2rem] font-black uppercase tracking-widest text-xs hover:bg-[#561485] shadow-2xl shadow-[#561485]/20 active:scale-95 transition-all flex items-center justify-center gap-3"
+                >
+                  <Save className="w-5 h-5" /> 
+                  {isSubmitting ? "Saving..." : (isCreating ? "Deploy Shop" : "Save Profile")}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="w-full py-5 bg-gray-50 text-gray-900 rounded-[2rem] font-black uppercase tracking-widest text-xs hover:bg-gray-100 transition-all flex items-center justify-center gap-3"
+                >
+                  <X className="w-5 h-5" /> Discard
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </form>
     </div>
   );
 }
