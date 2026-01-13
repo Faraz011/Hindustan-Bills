@@ -93,7 +93,7 @@ export default function Dashboard() {
                 to="/customer/dashboard/select-shop"
                 className="inline-flex items-center px-8 py-4 bg-white text-[#561485] font-black rounded-2xl hover:bg-gray-50 transition-all shadow-xl hover:scale-105 active:scale-95 uppercase tracking-tighter text-sm"
               >
-                Start Scanning
+                Select Shop
                 <ChevronRight className="ml-2 w-4 h-4" />
               </Link>
             </motion.div>
