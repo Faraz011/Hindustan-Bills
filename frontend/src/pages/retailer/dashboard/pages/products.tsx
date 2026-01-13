@@ -19,6 +19,7 @@ import {
   Clock,
   Leaf,
   Flame,
+  Minus,
 } from "lucide-react";
 
 interface ProductFormData {
@@ -183,6 +184,26 @@ export default function Products() {
     });
   };
 
+  const updateStock = async (productId: string, change: number) => {
+    try {
+      const product = products.find((p) => p._id === productId);
+      if (!product) return;
+
+      const newStock = Math.max(0, (product.stock || 0) + change);
+      await updateProduct(productId, { stock: newStock });
+      
+      setProducts((prevProducts) =>
+        prevProducts.map((p) =>
+          p._id === productId ? { ...p, stock: newStock } : p
+        )
+      );
+      
+      toast.success(`Stock updated: ${product.name} now has ${newStock} units`);
+    } catch (error) {
+      toast.error("Failed to update stock");
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -273,6 +294,25 @@ export default function Products() {
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
+                    {/* Stock Update Buttons */}
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => updateStock(product._id!, -1)}
+                        className="p-1 bg-red-100 hover:bg-red-200 text-red-600 rounded transition-colors"
+                        disabled={(product.stock || 0) <= 0}
+                      >
+                        <Minus className="h-3 w-3" />
+                      </button>
+                      <span className="text-sm font-medium text-gray-700 min-w-[60px] text-center">
+                        {product.stock || 0}
+                      </span>
+                      <button
+                        onClick={() => updateStock(product._id!, 1)}
+                        className="p-1 bg-green-100 hover:bg-green-200 text-green-600 rounded transition-colors"
+                      >
+                        <Plus className="h-3 w-3" />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
