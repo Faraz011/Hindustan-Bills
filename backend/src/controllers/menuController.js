@@ -89,10 +89,10 @@ export const getCart = asyncHandler(async (req, res) => {
 
   const cart = await Cart.findOne({ user: userId }).populate({
     path: "items.product",
-    select: "_id name price image category description",
+    select: "_id name price image category description shop",
     populate: {
       path: "shop",
-      select: "name",
+      select: "name metadata.upiId",
     },
   });
 
@@ -130,12 +130,14 @@ export const getCart = asyncHandler(async (req, res) => {
   });
 
   const total = subtotal; 
+  const shopUpiId = cart.items[0]?.product?.shop?.metadata?.upiId;
 
   res.json({
     items,
     subtotal,
     tax,
     total,
+    shopUpiId,
   });
 });
 
