@@ -12,6 +12,35 @@ import paymentRoutes from "./routes/paymentRoutes.js"; // ✅ new payment route
 import shopRoutes from "./routes/shopRoutes.js";
 import receiptRoutes from "./routes/receipt.routes.js";
 
+// Simple in-memory rate limiter (for production, use Redis)
+const rateLimitStore = new Map();
+
+const rateLimiter = (maxRequests = 100, windowMs = 15 * 60 * 1000) => {
+  return (req, res, next) => {
+    const key = req.ip;
+    const now = Date.now();
+    const windowStart = now - windowMs;
+
+    if (!rateLimitStore.has(key)) {
+      rateLimitStore.set(key, []);
+    }
+
+    const requests = rateLimitStore.get(key);
+    // Remove old requests outside the window
+    const validRequests = requests.filter((time) => time > windowStart);
+
+    if (validRequests.length >= maxRequests) {
+      return res
+        .status(429)
+        .json({ message: "Too many requests, please try again later." });
+    }
+
+    validRequests.push(now);
+    rateLimitStore.set(key, validRequests);
+    next();
+  };
+};
+
 const app = express();
 
 // Middleware
