@@ -1,12 +1,14 @@
-// frontend/src/pages/customer/dashboard/pages/Dashboard.tsx
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   ShoppingCart,
   Package,
   CreditCard,
   TrendingUp,
   Store,
+  ChevronRight,
+  ArrowUpRight,
 } from "lucide-react";
 import { getOrdersHistory } from "../../../../lib/api";
 
@@ -42,26 +44,18 @@ export default function Dashboard() {
   const loadDashboardData = async () => {
     try {
       const orders = await getOrdersHistory();
-      setRecentOrders(orders.slice(0, 5)); // Get last 5 orders
+      setRecentOrders(orders.slice(0, 5));
 
-      // Calculate stats
-      const totalOrders = orders.length;
       const totalSpent = orders.reduce(
         (sum: number, order: Order) => sum + (order.totalAmount || order.total || 0),
         0
       );
-      const pendingOrders = orders.filter(
-        (order: Order) => order.status === "pending"
-      ).length;
-      const completedOrders = orders.filter(
-        (order: Order) => order.status === "completed"
-      ).length;
 
       setStats({
-        totalOrders,
+        totalOrders: orders.length,
         totalSpent,
-        pendingOrders,
-        completedOrders,
+        pendingOrders: orders.filter((o: Order) => o.status === "pending").length,
+        completedOrders: orders.filter((o: Order) => o.status === "completed").length,
       });
     } catch (error) {
       console.error("Error loading dashboard data:", error);
@@ -72,180 +66,151 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#561485]"></div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="w-12 h-12 border-4 border-[#561485]/20 border-t-[#561485] rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Customer Dashboard</h1>
-        <div className="flex items-center space-x-2">
-          <div className="w-3 h-3 bg-[#561485] rounded-full"></div>
-          <div className="w-3 h-3 bg-[#3C47BA] rounded-full"></div>
-          <div className="w-3 h-3 bg-[#A13266] rounded-full"></div>
-        </div>
-      </div>
-
-      {/* Start Shopping Card */}
-      <div className="bg-gradient-to-r from-[#561485] to-[#3C47BA] rounded-2xl p-8 text-white shadow-xl">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <h2 className="text-2xl font-bold mb-3">Ready to Shop?</h2>
-            <p className="text-white/90 mb-6 text-lg">
-              Select a shop and start scanning products with your camera
-            </p>
-            <Link
-              to="/customer/dashboard/select-shop"
-              className="inline-flex items-center px-6 py-3 bg-white text-[#561485] font-semibold rounded-xl hover:bg-gray-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+    <div className="space-y-10 max-w-6xl mx-auto">
+      {/* Welcome Banner */}
+      <section className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#561485] via-[#3C47BA] to-[#A13266] p-8 md:p-12 text-white shadow-2xl shadow-[#561485]/20">
+        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="text-center md:text-left">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
             >
-              <Store className="h-5 w-5 mr-3" />
-              Select Shop & Start Shopping
-            </Link>
+              <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-4 leading-none uppercase">
+                Ready to Shop?
+              </h1>
+              <p className="text-white/80 text-lg font-medium max-w-md mb-8 tracking-tight">
+                Select a store, scan your items, and experience the future of checkout-free billing.
+              </p>
+              <Link
+                to="/customer/dashboard/select-shop"
+                className="inline-flex items-center px-8 py-4 bg-white text-[#561485] font-black rounded-2xl hover:bg-gray-50 transition-all shadow-xl hover:scale-105 active:scale-95 uppercase tracking-tighter text-sm"
+              >
+                Start Scanning
+                <ChevronRight className="ml-2 w-4 h-4" />
+              </Link>
+            </motion.div>
           </div>
-          <div className="hidden lg:block ml-8">
-            <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-              <Store className="h-12 w-12 text-white" />
-            </div>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-48 h-48 md:w-64 md:h-64 bg-white/10 backdrop-blur-3xl rounded-[3rem] border border-white/20 flex items-center justify-center shadow-inner"
+          >
+            <Store className="w-24 h-24 md:w-32 md:h-32 text-white/40" />
+          </motion.div>
         </div>
-      </div>
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#A13266]/20 rounded-full blur-2xl"></div>
+      </section>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-          <div className="flex items-center">
-            <div className="p-3 bg-gradient-to-br from-[#561485] to-[#3C47BA] rounded-xl shadow-lg">
-              <ShoppingCart className="h-7 w-7 text-white" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-semibold text-gray-600">
-                Total Orders
-              </p>
-              <p className="text-3xl font-bold text-gray-900">
-                {stats.totalOrders}
-              </p>
-            </div>
-          </div>
+      {/* Stats Grid */}
+      <section>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Your Activity Overview</h2>
         </div>
-
-        <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-          <div className="flex items-center">
-            <div className="p-3 bg-gradient-to-br from-[#3C47BA] to-[#561485] rounded-xl shadow-lg">
-              <CreditCard className="h-7 w-7 text-white" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-semibold text-gray-600">
-                Total Spent
-              </p>
-              <p className="text-3xl font-bold text-gray-900">
-                ₹{stats.totalSpent.toFixed(2)}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-          <div className="flex items-center">
-            <div className="p-3 bg-gradient-to-br from-[#A13266] to-[#561485] rounded-xl shadow-lg">
-              <Package className="h-7 w-7 text-white" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-semibold text-gray-600">
-                Pending Orders
-              </p>
-              <p className="text-3xl font-bold text-gray-900">
-                {stats.pendingOrders}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-          <div className="flex items-center">
-            <div className="p-3 bg-gradient-to-br from-[#561485] to-[#A13266] rounded-xl shadow-lg">
-              <TrendingUp className="h-7 w-7 text-white" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-semibold text-gray-600">
-                Completed Orders
-              </p>
-              <p className="text-3xl font-bold text-gray-900">
-                {stats.completedOrders}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Orders */}
-      <div className="bg-white shadow-xl rounded-2xl border border-gray-100 overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
-          <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-            <div className="w-8 h-8 bg-gradient-to-br from-[#561485] to-[#3C47BA] rounded-lg flex items-center justify-center mr-3">
-              <Package className="h-4 w-4 text-white" />
-            </div>
-            Recent Orders
-          </h2>
-        </div>
-        <div className="p-6">
-          {recentOrders.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Package className="h-10 w-10 text-gray-400" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: "Total Orders", val: stats.totalOrders, icon: Package, color: "#561485" },
+            { label: "Amount Spent", val: `₹${stats.totalSpent.toFixed(0)}`, icon: CreditCard, color: "#3C47BA" },
+            { label: "Pending", val: stats.pendingOrders, icon: ShoppingCart, color: "#A13266" },
+            { label: "Completed", val: stats.completedOrders, icon: TrendingUp, color: "#10B981" },
+          ].map((stat, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="bg-white p-6 rounded-[2rem] border border-gray-50 shadow-sm hover:shadow-xl transition-all group"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div 
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg"
+                  style={{ backgroundColor: stat.color + '20', color: stat.color }}
+                >
+                  <stat.icon className="w-6 h-6" />
+                </div>
+                <ArrowUpRight className="w-4 h-4 text-gray-300 group-hover:text-gray-900 transition-colors" />
               </div>
-              <p className="text-gray-500 text-lg mb-2 font-medium">No orders yet</p>
-              <p className="text-gray-400">
-                Start shopping to see your orders here!
-              </p>
+              <div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-tighter mb-1">{stat.label}</p>
+                <p className="text-2xl font-black text-gray-900 tracking-tighter">{stat.val}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Recent Activity */}
+      <section className="bg-white rounded-[2.5rem] border border-gray-50 shadow-sm overflow-hidden">
+        <div className="p-8 border-b border-gray-50 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-black text-gray-900 tracking-tighter uppercase leading-none">Recent Orders</h2>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Order History Tracker</p>
+          </div>
+          <Link 
+            to="/customer/dashboard/orders" 
+            className="text-xs font-black text-[#561485] uppercase tracking-tighter px-4 py-2 bg-[#561485]/5 rounded-xl hover:bg-[#561485]/10 transition-colors"
+          >
+            View All
+          </Link>
+        </div>
+        <div className="p-4 md:p-8">
+          {recentOrders.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="w-20 h-20 bg-gray-50 rounded-[2rem] flex items-center justify-center mx-auto mb-4 border border-gray-100">
+                <Package className="w-8 h-8 text-gray-300" />
+              </div>
+              <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No recent activity detected</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {recentOrders.map((order) => (
-                <div
+                <Link
                   key={order._id}
-                  className="flex items-center justify-between p-5 border border-gray-100 rounded-xl hover:shadow-md transition-all duration-200 hover:border-[#561485] bg-white"
+                  to={`/customer/dashboard/orders`}
+                  className="flex items-center justify-between p-5 rounded-3xl hover:bg-gray-50 transition-all border border-transparent hover:border-gray-100 group"
                 >
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-[#561485] to-[#3C47BA] rounded-full flex items-center justify-center">
-                      <Package className="h-6 w-6 text-white" />
+                  <div className="flex items-center gap-5">
+                    <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 group-hover:bg-[#561485]/10 group-hover:text-[#561485] transition-all">
+                      <Package className="w-6 h-6" />
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-900">
-                        Order #{order._id.slice(-8)}
+                      <p className="font-black text-gray-900 tracking-tighter uppercase text-base">
+                        Order #{order._id.slice(-6)}
                       </p>
-                      <p className="text-sm text-gray-600">
-                        {order.items.length} item
-                        {order.items.length !== 1 ? "s" : ""} •{" "}
-                        {new Date(order.createdAt).toLocaleDateString()}
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+                        {new Date(order.createdAt).toLocaleDateString()} • {order.items.length} Items
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-gray-900 text-lg">
+                    <p className="text-xl font-black text-gray-900 tracking-tighter">
                       ₹{(order.totalAmount || order.total || 0).toFixed(2)}
                     </p>
-                    <span
-                      className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
-                        order.status === "completed"
-                          ? "bg-green-100 text-green-800 border border-green-200"
-                          : order.status === "pending"
-                          ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
-                          : "bg-gray-100 text-gray-800 border border-gray-200"
+                    <span 
+                      className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
+                        order.status === 'completed' 
+                          ? 'bg-green-50 text-green-600 border-green-100' 
+                          : 'bg-yellow-50 text-yellow-600 border-yellow-100'
                       }`}
                     >
-                      {order.status.charAt(0).toUpperCase() +
-                        order.status.slice(1)}
+                      {order.status}
                     </span>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}
         </div>
-      </div>
+      </section>
     </div>
   );
 }
