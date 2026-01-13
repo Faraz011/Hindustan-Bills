@@ -1,44 +1,33 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Clock,
-  Leaf,
-  Flame,
+  ChefHat,
+  Search,
   Plus,
   Minus,
-  ShoppingCart,
-  ChefHat,
+  Star,
+  Clock,
+  ChevronRight,
+  ShoppingBag,
+  ArrowLeft,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import api from "../../../../api/axios";
-
-const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
-
-interface Product {
-  _id: string;
-  name: string;
-  description?: string;
-  price: number;
-  category: string;
-  image?: string;
-  dietaryInfo?: string[];
-  preparationTime?: number;
-  isAvailable: boolean;
-}
-
+import { getProducts, addToCart as addToCartAPI, Product, getCart, updateCartItem, removeFromCart } from "../../../../lib/api";
 
 const MenuPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [cart, setCart] = useState<{ [key: string]: number }>({});
+  const [cartQuantities, setCartQuantities] = useState<{ [key: string]: number }>({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dbCart, setDbCart] = useState<any>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchProducts();
+    fetchData();
   }, []);
 
-  const fetchProducts = async () => {
+  const fetchData = async () => {
     try {
       const selectedShopString = localStorage.getItem("selectedShop");
       if (!selectedShopString) {
@@ -47,255 +36,290 @@ const MenuPage = () => {
       }
 
       const selectedShop = JSON.parse(selectedShopString);
-      const response = await api.get(`/api/products/shop/${selectedShop._id}`);
-      setProducts(response.data as Product[]);
+      const [productsData, cartData] = await Promise.all([
+        getProducts(selectedShop._id),
+        getCart(),
+      ]);
+
+      setProducts(productsData);
+      setDbCart(cartData);
+      
+      const quantities: { [key: string]: number } = {};
+      if (cartData && cartData.items) {
+        cartData.items.forEach((item: any) => {
+          quantities[item.productId] = item.quantity;
+        });
+      }
+      setCartQuantities(quantities);
     } catch (error) {
-      console.error("Error fetching products:", error);
+      console.error("Error fetching menu data:", error);
       toast.error("Failed to load menu");
     } finally {
       setLoading(false);
     }
   };
 
-  const addToCart = async (productId: string) => {
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [products, searchQuery]);
+
+  const handleAddToCart = async (productId: string) => {
     try {
       const selectedShopString = localStorage.getItem("selectedShop");
-      if (!selectedShopString) {
-        toast.error("Please select a shop first");
-        return;
-      }
-
+      if (!selectedShopString) return;
       const selectedShop = JSON.parse(selectedShopString);
-      const product = products.find((p) => p._id === productId);
-      if (!product) {
-        toast.error("Product not found");
-        return;
-      }
 
-      const quantity = getCartQuantity(productId);
-      const response = await fetch(`${API_BASE}/api/menu/add-to-cart`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("hb_token")}`,
-        },
-        body: JSON.stringify({
-          productId,
-          quantity: quantity,
-          shopId: selectedShop._id,
-        }),
-      });
+      await addToCartAPI(productId, 1, selectedShop._id);
+      setCartQuantities((prev) => ({ ...prev, [productId]: (prev[productId] || 0) + 1 }));
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `HTTP ${response.status}: ${errorText || response.statusText}`
-        );
-      }
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // Reset quantity to 1 after adding to cart
-        setCart((prevCart) => ({
-          ...prevCart,
-          [productId]: 1,
-        }));
-        toast.success(`${quantity} x ${product.name} added to cart`);
-        // Navigate to menu cart page
-        navigate("/customer/dashboard/menu-cart");
-      } else {
-        toast.error(data.message || "Failed to add to cart");
-      }
+      const updatedCart = await getCart();
+      setDbCart(updatedCart);
+      toast.success("Added to cart");
     } catch (error) {
-      console.error("Add to cart error:", error);
-      toast.error("Failed to add to cart");
+      toast.error("Failed to add");
     }
   };
 
-  const updateQuantity = (productId: string, quantity: number) => {
-    if (quantity < 1) {
-      setCart((prevCart) => ({
-        ...prevCart,
-        [productId]: 1,
-      }));
-    } else {
-      setCart((prevCart) => ({
-        ...prevCart,
-        [productId]: quantity,
-      }));
+  const handleUpdateQuantity = async (productId: string, delta: number) => {
+    try {
+      const currentQty = cartQuantities[productId] || 0;
+      const newQty = Math.max(0, currentQty + delta);
+      if (newQty === currentQty) return;
+
+      if (delta > 0) {
+        const selectedShopString = localStorage.getItem("selectedShop");
+        if (!selectedShopString) return;
+        const selectedShop = JSON.parse(selectedShopString);
+        await addToCartAPI(productId, 1, selectedShop._id);
+      } else {
+        if (newQty === 0) {
+          await removeFromCart(productId);
+        } else {
+          await updateCartItem(productId, newQty);
+        }
+      }
+
+      setCartQuantities((prev) => ({ ...prev, [productId]: newQty }));
+      const updatedCart = await getCart();
+      setDbCart(updatedCart);
+    } catch (error) {
+      toast.error("Failed to update");
     }
-  };
-
-  const getCartQuantity = (productId: string) => {
-    return cart[productId] || 1;
-  };
-
-  const getTotalItems = () => {
-    return Object.values(cart).reduce((sum, quantity) => sum + quantity, 0);
-  };
-
-  const increaseQuantity = (productId: string) => {
-    const currentQuantity = getCartQuantity(productId);
-    updateQuantity(productId, currentQuantity + 1);
-  };
-
-  const getDietaryIcon = (dietaryInfo?: string[]) => {
-    if (!dietaryInfo || dietaryInfo.length === 0) return null;
-
-    if (dietaryInfo.includes("vegetarian"))
-      return <Leaf className="w-4 h-4 text-green-500" />;
-    if (dietaryInfo.includes("vegan"))
-      return <Leaf className="w-4 h-4 text-green-600" />;
-    if (dietaryInfo.includes("spicy"))
-      return <Flame className="w-4 h-4 text-red-500" />;
-    return null;
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#561485]"></div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-[#561485]/10 border-t-[#561485] rounded-full animate-spin"></div>
+          <ChefHat className="absolute inset-0 m-auto text-[#561485] w-6 h-6 animate-pulse" />
+        </div>
       </div>
     );
   }
 
+  const selectedShop = JSON.parse(localStorage.getItem("selectedShop") || "{}");
+
   return (
-    <div className="min-h-screen bg-[#EAEAEA]">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-[#561485] to-[#3C47BA] rounded-xl flex items-center justify-center shadow-lg">
-                <ChefHat className="w-6 h-6 text-white" />
-              </div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Restaurant Menu
-              </h1>
-            </div>
-            <button
-              onClick={() => navigate("/customer/dashboard/menu-cart")}
-              className="relative bg-gradient-to-r from-[#561485] to-[#3C47BA] text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center gap-3 font-semibold"
+    <div className="min-h-screen bg-white pb-32">
+      {/* Premium Hero Banner */}
+      <section className="relative h-72 md:h-[400px] w-full overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10"></div>
+        <motion.img
+          initial={{ scale: 1.1 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 1.5 }}
+          src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=1600"
+          alt="Banner"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-x-0 bottom-0 p-8 md:p-16 z-20">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-6xl mx-auto space-y-4"
+          >
+            <button 
+              onClick={() => navigate("/customer/dashboard/select-shop")}
+              className="group flex items-center gap-2 text-[10px] font-black text-white/60 uppercase tracking-widest hover:text-white transition-colors"
             >
-              <ShoppingCart className="w-5 h-5" />
-              Cart ({getTotalItems()})
-              {getTotalItems() > 0 && (
-                <div className="absolute -top-2 -right-2 w-6 h-6 bg-[#A13266] rounded-full flex items-center justify-center text-white text-xs font-bold">
-                  {getTotalItems()}
-                </div>
-              )}
+              <ArrowLeft className="w-3 h-3" />
+              Change Outlet
             </button>
-          </div>
+            <h1 className="text-4xl md:text-7xl font-black text-white tracking-tighter uppercase leading-none">
+              {selectedShop.name || "The Kitchen"}
+            </h1>
+            <div className="flex flex-wrap items-center gap-6 text-[10px] font-black uppercase tracking-widest text-white/80">
+              <span className="bg-emerald-500 text-white px-3 py-1 rounded-full flex items-center gap-1.5 shadow-xl shadow-emerald-500/20">
+                4.8 <Star className="w-3 h-3 fill-current" />
+              </span>
+              <span className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-[#A13266]" /> 25-30 Mins
+              </span>
+              <span className="w-1 h-1 bg-white/20 rounded-full"></span>
+              <span>{selectedShop.address?.city || "Downtown"}</span>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Sticky Search & Discovery */}
+      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-3xl border-b border-gray-50 p-6">
+        <div className="max-w-4xl mx-auto relative group">
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300 w-5 h-5 group-focus-within:text-[#561485] transition-colors" />
+          <input
+            type="text"
+            placeholder="Craving something specific?"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-16 pr-8 py-5 bg-gray-50 border-2 border-transparent rounded-[2rem] focus:border-[#561485]/10 focus:bg-white transition-all text-sm font-bold tracking-tight outline-none"
+          />
         </div>
       </div>
 
-      {/* Menu Items */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {products.map((product) => (
+      {/* Menu Sections */}
+      <div className="max-w-4xl mx-auto px-6 mt-12 space-y-16">
+        <header className="flex items-center gap-4">
+          <div className="flex-1 h-px bg-gray-50"></div>
+          <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Signature Selection</h2>
+          <div className="flex-1 h-px bg-gray-50"></div>
+        </header>
+
+        <div className="grid gap-12">
+          {filteredProducts.map((product, i) => (
             <motion.div
               key={product._id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
+              transition={{ delay: i * 0.05 }}
+              className="flex flex-col md:flex-row gap-8 items-start group"
             >
-              <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200">
-                <img
-                  src={product.image || "/placeholder-product.png"}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
-                {!product.isAvailable && (
-                  <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
-                    <span className="text-white font-bold text-lg bg-[#A13266] px-4 py-2 rounded-full shadow-lg">
-                      Unavailable
-                    </span>
+              <div className="flex-1 space-y-4 order-2 md:order-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-emerald-500 p-0.5 rounded flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
                   </div>
-                )}
-              </div>
-
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-xl font-bold text-gray-900 leading-tight flex-1">
+                  <span className="text-[9px] font-black text-[#A13266] uppercase tracking-widest">{product.category || "Main Course"}</span>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-gray-900 tracking-tighter group-hover:text-[#561485] transition-colors uppercase leading-none mb-2">
                     {product.name}
                   </h3>
-                  {getDietaryIcon(product.dietaryInfo || [])}
-                </div>
-
-                {product.description && (
-                  <p className="text-gray-600 text-sm mb-6 line-clamp-2 leading-relaxed">
-                    {product.description}
+                  <p className="text-sm font-bold text-gray-400 leading-relaxed line-clamp-2">
+                    {product.description || "A masterfully prepared dish using the finest seasonal ingredients and traditional techniques."}
                   </p>
-                )}
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-xl font-black text-gray-900 tracking-tighter">₹{product.price}</span>
+                  {product.stock && product.stock < 10 && product.stock > 0 && (
+                    <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest bg-rose-50 px-2 py-1 rounded">
+                      Only {product.stock} left
+                    </span>
+                  )}
+                </div>
+              </div>
 
-                <div className="flex items-center justify-between mb-6">
-                  <span className="text-2xl font-bold text-gray-900">
-                    ₹{product.price}
-                  </span>
-                  {product.preparationTime && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-100 px-3 py-2 rounded-full">
-                      <Clock className="w-4 h-4" />
-                      {product.preparationTime} min
+              <div className="relative order-1 md:order-2 w-full md:w-auto">
+                <div className="w-full h-48 md:w-44 md:h-44 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-gray-200 group-hover:shadow-[#561485]/10 transition-all duration-500">
+                  <img
+                    src={product.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=400"}
+                    alt={product.name}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                  {!(product.stock && product.stock > 0) && (
+                    <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center">
+                      <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest border-2 border-gray-900 px-3 py-1 rounded-full">
+                        Out of Stock
+                      </span>
                     </div>
                   )}
                 </div>
 
-                {product.dietaryInfo && product.dietaryInfo.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-6">
-                    {product.dietaryInfo.map((diet) => (
-                      <span
-                        key={diet}
-                        className="px-3 py-1 bg-gradient-to-r from-green-50 to-green-100 text-green-700 text-xs font-semibold rounded-full border border-green-200"
-                      >
-                        {diet}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {product.isAvailable ? (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 bg-gray-50 rounded-xl p-1">
-                      <button
-                        onClick={() =>
-                          updateQuantity(
-                            product._id,
-                            Math.max(1, getCartQuantity(product._id) - 1)
-                          )
-                        }
-                        className="w-10 h-10 rounded-xl bg-red-100 hover:bg-red-200 text-red-600 flex items-center justify-center transition-all duration-200 transform hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={getCartQuantity(product._id) <= 1}
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <div className="w-16 text-center">
-                        <span className="text-xl font-bold text-gray-900">
-                          {getCartQuantity(product._id)}
-                        </span>
+                {/* ADD Controls */}
+                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-2 pb-2">
+                  <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 flex items-center overflow-hidden min-w-[120px]">
+                    {(cartQuantities[product._id!] || 0) > 0 ? (
+                      <div className="flex-1 flex items-center justify-between p-1">
+                        <button
+                          onClick={() => handleUpdateQuantity(product._id!, -1)}
+                          className="w-8 h-8 flex items-center justify-center text-[#561485] hover:bg-gray-50 rounded-xl transition-colors"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="text-xs font-black text-gray-900">{cartQuantities[product._id!]}</span>
+                        <button
+                          onClick={() => handleUpdateQuantity(product._id!, 1)}
+                          className="w-8 h-8 flex items-center justify-center text-[#561485] hover:bg-gray-50 rounded-xl transition-colors"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
                       </div>
+                    ) : (
                       <button
-                        onClick={() => increaseQuantity(product._id)}
-                        className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#561485] to-[#3C47BA] hover:from-[#561485]/90 hover:to-[#3C47BA]/90 text-white flex items-center justify-center transition-all duration-200 transform hover:scale-110 shadow-lg"
+                        disabled={!(product.stock && product.stock > 0)}
+                        onClick={() => handleAddToCart(product._id!)}
+                        className="w-full py-3 text-xs font-black text-[#561485] uppercase tracking-widest hover:bg-[#561485] hover:text-white transition-all disabled:opacity-20 active:scale-95"
                       >
-                        <Plus className="w-4 h-4" />
+                        Add
                       </button>
-                    </div>
-                    <button
-                      onClick={() => addToCart(product._id)}
-                      className="bg-gradient-to-r from-[#A13266] to-[#561485] text-white px-6 py-3 rounded-xl hover:from-[#A13266]/90 hover:to-[#561485]/90 transition-all duration-200 transform hover:scale-105 shadow-lg font-semibold"
-                    >
-                      Add to Cart
-                    </button>
+                    )}
                   </div>
-                ) : null}
-            </div>
-          </motion.div>
-        ))}
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </div>
+
+      {/* Floating Modern Cart Summary */}
+      <AnimatePresence>
+        {dbCart && dbCart.items && dbCart.items.length > 0 && (
+          <motion.div
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 50, opacity: 0 }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-lg z-50"
+          >
+            <button
+              onClick={() => navigate("/customer/dashboard/menu-cart")}
+              className="w-full bg-gray-900 text-white p-6 rounded-[2.5rem] shadow-2xl shadow-black/40 flex items-center justify-between group active:scale-[0.98] transition-all"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center group-hover:bg-[#561485] transition-colors">
+                  <ShoppingBag className="w-5 h-5" />
+                </div>
+                <div className="text-left">
+                  <p className="text-[10px] font-black text-white/40 uppercase tracking-widest leading-none mb-1">
+                    {dbCart.items.length} Culinary Items
+                  </p>
+                  <p className="text-xl font-black tracking-tighter leading-none">
+                    ₹{(dbCart.total || dbCart.subtotal || 0).toFixed(0)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest bg-white/10 px-6 py-3 rounded-full hover:bg-white/20 transition-colors">
+                View Bag
+                <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </div>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Empty States */}
+      {filteredProducts.length === 0 && (
+        <div className="py-32 text-center space-y-4">
+          <ChefHat className="w-16 h-16 text-gray-100 mx-auto" />
+          <div className="space-y-1">
+            <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest">No delicacies found</h3>
+            <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">Refine your search parameters</p>
+          </div>
+        </div>
+      )}
     </div>
-  </div>
-);
+  );
 };
 
 export default MenuPage;
