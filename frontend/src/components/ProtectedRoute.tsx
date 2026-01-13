@@ -8,6 +8,7 @@ interface Props {
 
 interface JWTPayload {
   role?: string;
+  profileCompleted?: boolean;
 }
 
 const ProtectedRoute = ({ children, role }: Props) => {
@@ -18,24 +19,28 @@ const ProtectedRoute = ({ children, role }: Props) => {
     return <Navigate to="/login" replace />;
   }
 
-  // If role is specified, check if user has the required role
-  if (role) {
-    try {
-      const decoded: JWTPayload = jwtDecode(token);
-      if (decoded.role !== role) {
-        // Redirect to appropriate dashboard based on user role
-        if (decoded.role === "retailer") {
-          return <Navigate to="/retailer/dashboard" replace />;
-        } else if (decoded.role === "customer") {
-          return <Navigate to="/customer/dashboard" replace />;
-        } else {
-          return <Navigate to="/" replace />;
-        }
-      }
-    } catch (error) {
-      console.error("Error decoding token:", error);
-      return <Navigate to="/login" replace />;
+  try {
+    const decoded: JWTPayload = jwtDecode(token);
+
+    // If profile is not completed → force setup
+    if (decoded.profileCompleted === false) {
+      return <Navigate to="/complete-setup" replace />;
     }
+
+    // If role is specified, check if user has the required role
+    if (role && decoded.role !== role) {
+      // Redirect to appropriate dashboard based on user role
+      if (decoded.role === "retailer") {
+        return <Navigate to="/retailer/dashboard" replace />;
+      } else if (decoded.role === "customer") {
+        return <Navigate to="/customer/dashboard" replace />;
+      } else {
+        return <Navigate to="/" replace />;
+      }
+    }
+  } catch (error) {
+    console.error("Error decoding token:", error);
+    return <Navigate to="/login" replace />;
   }
 
   // Token exists and role matches (or no role specified) → allow access

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
@@ -10,6 +10,7 @@ import api from "../api/axios";
 interface JwtPayload {
   id: string;
   role: string;
+  profileCompleted: boolean;
   exp: number;
   iat: number;
 }
@@ -36,7 +37,6 @@ const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
 
   const {
     register,
@@ -70,7 +70,7 @@ const Login = () => {
 
      
       const authRes = await api.post<AuthResponse>(endpoint, payload);
-      const { token } = authRes.data;
+      const { token } = authRes as any;
 
       if (!token) {
         throw new Error("No token received");
@@ -93,10 +93,11 @@ const Login = () => {
       toast.success(isLogin ? "Login successful!" : "Registration successful!");
 
       
-      const redirectPath =
-        decodedToken.role === "retailer"
-          ? "/retailer/dashboard"
-          : "/customer/dashboard";
+      const redirectPath = !decodedToken.profileCompleted
+        ? "/complete-setup"
+        : decodedToken.role === "retailer"
+        ? "/retailer/dashboard"
+        : "/customer/dashboard";
 
       console.log("Redirecting to:", redirectPath);
       navigate(redirectPath, { replace: true });

@@ -277,7 +277,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
-import { Eye, EyeOff, Mail, Lock, User, Building } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../api/axios'
 
@@ -300,7 +300,6 @@ interface RegisterResponse {
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [accountType, setAccountType] = useState<'retailer' | 'user'>('retailer')
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
 
@@ -323,24 +322,18 @@ const Register = () => {
         name: `${data.firstName?.trim() || ''} ${data.lastName?.trim() || ''}`.trim(),
         email: data.email,
         password: data.password,
-        role: accountType === 'retailer' ? 'retailer' : 'customer',
-      }
-
-      // Add business details only for retailer
-      if (accountType === 'retailer') {
-        if (data.businessName) payload.businessName = data.businessName
-        if (data.businessType) payload.businessType = data.businessType
+        role: 'customer', // Default, will be updated in setup
       }
 
       // Call backend register endpoint
       const res = await api.post<RegisterResponse>('/auth/register', payload)
-      const resData = res && res.data ? res.data : ({} as RegisterResponse)
+      const resData = res as any
 
       // If backend returns a token, consider user logged in
-      if (resData.token && typeof resData.token === 'string' && resData.token.length > 0) {
+      if (resData && resData.token && typeof resData.token === 'string' && resData.token.length > 0) {
         localStorage.setItem('hb_token', resData.token)
-        toast.success('Registration successful! Welcome to Hindustan Bills!')
-        navigate('/')
+        toast.success('Registration successful! Let\'s set up your profile.')
+        navigate('/complete-setup')
         return
       }
 
@@ -397,32 +390,6 @@ const Register = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Account type */}
-            <div className="flex items-center gap-4">
-              <label className="px-3 py-2 rounded-md cursor-pointer">
-                <input
-                  type="radio"
-                  name="accountType"
-                  value="retailer"
-                  checked={accountType === 'retailer'}
-                  onChange={() => setAccountType('retailer')}
-                  className="mr-2"
-                />
-                Retailer
-              </label>
-              <label className="px-3 py-2 rounded-md cursor-pointer">
-                <input
-                  type="radio"
-                  name="accountType"
-                  value="user"
-                  checked={accountType === 'user'}
-                  onChange={() => setAccountType('user')}
-                  className="mr-2"
-                />
-                User
-              </label>
-            </div>
-
             {/* Name fields */}
             <div className="grid md:grid-cols-2 gap-6">
               <div>
@@ -580,63 +547,6 @@ const Register = () => {
                 )}
               </div>
             </div>
-
-            {/* Business fields (only for retailer) */}
-            {accountType === 'retailer' && (
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <label
-                    htmlFor="businessName"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Business Name
-                  </label>
-                  <div className="relative">
-                    <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      {...register('businessName', {
-                        required: 'Business name is required',
-                      })}
-                      type="text"
-                      className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors duration-200"
-                      placeholder="Enter your business name"
-                    />
-                  </div>
-                  {errors.businessName && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.businessName.message}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="businessType"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Business Type
-                  </label>
-                  <select
-                    {...register('businessType', {
-                      required: 'Business type is required',
-                    })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors duration-200"
-                  >
-                    <option value="">Select business type</option>
-                    <option value="retail">Retail Store</option>
-                    <option value="restaurant">Restaurant</option>
-                    <option value="supermarket">Supermarket</option>
-                    <option value="pharmacy">Pharmacy</option>
-                    <option value="other">Other</option>
-                  </select>
-                  {errors.businessType && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.businessType.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
 
             {/* Terms */}
             <div className="flex items-center">

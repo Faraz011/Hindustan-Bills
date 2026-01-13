@@ -6,7 +6,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import GoogleCallback from "./pages/GoogleCallback";
+import SetupProfile from "./pages/SetupProfile";
 import Products from "./pages/Products";
 import Contact from "./pages/Contact";
 import About from "./pages/About";
@@ -63,7 +63,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/auth/google/callback" element={<GoogleCallback />} />
+          <Route path="/auth/google/callback" element={<SetupProfile />} />
+          <Route path="/complete-setup" element={<SetupProfile />} />
           <Route path="/products" element={<Products />} />
 
           {/* <Route path="/receipt/:id" element={<Receipt />} /> */}
