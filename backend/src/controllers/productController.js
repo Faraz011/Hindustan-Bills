@@ -45,7 +45,7 @@ export const createProduct = asyncHandler(async (req, res) => {
     price,
     category,
     stock,
-    imageUrl,
+    image,
     barcode,
     sku,
     dietaryInfo,
@@ -104,7 +104,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
     price,
     category,
     stock,
-    imageUrl,
+    image,
     barcode,
     sku,
     isActive,
@@ -118,7 +118,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
   if (price !== undefined) product.price = price;
   if (category) product.category = category;
   if (stock !== undefined) product.stock = stock;
-  if (imageUrl) product.image = imageUrl;
+  if (image) product.image = image;
   if (isActive !== undefined) product.isActive = isActive;
   if (dietaryInfo !== undefined) product.dietaryInfo = dietaryInfo;
   if (preparationTime !== undefined) product.preparationTime = preparationTime;

@@ -82,7 +82,7 @@ export interface Product {
   category?: string;
   description?: string;
   stock?: number;
-  imageUrl?: string;
+  image?: string;
   shopId?: string;
 }
 

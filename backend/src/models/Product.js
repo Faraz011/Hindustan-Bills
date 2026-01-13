@@ -21,6 +21,7 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      lowercase: true,
       enum: [
         // Retail categories
         "electronics",
