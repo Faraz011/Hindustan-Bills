@@ -65,6 +65,7 @@ export interface Shop {
   metadata?: {
     fssaiLicense?: string;
     gstNumber?: string;
+    upiId?: string;
   };
   owner: {
     name: string;
