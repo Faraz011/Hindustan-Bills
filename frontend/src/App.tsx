@@ -94,7 +94,7 @@ function App() {
             <Route index element={<CustomerDashboardPage />} />
             <Route path="select-shop" element={<ShopSelectionPage />} />
             <Route path="shopping" element={<ShoppingOrMenuPage />} />
-            <Route path="cart" element={<Cart />} />
+            <Route path="cart" element={<Cart/>} />
             <Route path="menu-cart" element={<MenuCartPage />} />
             <Route path="upi-payment" element={<UpiPaymentPage />} />
             <Route path="orders" element={<CustomerOrdersPage />} />
