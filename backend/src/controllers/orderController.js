@@ -4,49 +4,55 @@ import Cart from "../models/Cart.js";
 import asyncHandler from "express-async-handler";
 
 export const getOrderHistory = asyncHandler(async (req, res) => {
-  console.log("getOrderHistory called for user:", req.user);
+  try {
+    console.log("getOrderHistory called for user:", req.user);
 
-  if (!req.user || !req.user.id) {
-    return res.status(401).json({ message: "User not authenticated" });
-  }
+    if (!req.user || !req.user.id) {
+      console.error("User ID missing in req.user:", req.user);
+      return res.status(401).json({ message: "User not authenticated" });
+    }
 
-  const { status, startDate, endDate } = req.query;
-  console.log("Query params:", { status, startDate, endDate });
+    const { status, startDate, endDate } = req.query;
+    console.log("Query params:", { status, startDate, endDate });
 
-  let query = { customer: req.user.id };
-  console.log("Base query:", query);
+    let query = { customer: req.user.id };
+    console.log("Base query:", query);
 
-  if (status) {
-    query.status = status;
-  }
+    if (status) {
+      query.status = status;
+    }
 
-  if (startDate || endDate) {
-    query.createdAt = {};
-    if (startDate) {
-      const start = new Date(startDate);
-      if (!isNaN(start.getTime())) {
-        query.createdAt.$gte = start;
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        const start = new Date(startDate);
+        if (!isNaN(start.getTime())) {
+          query.createdAt.$gte = start;
+        }
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        if (!isNaN(end.getTime())) {
+          query.createdAt.$lte = end;
+        }
       }
     }
-    if (endDate) {
-      const end = new Date(endDate);
-      if (!isNaN(end.getTime())) {
-        query.createdAt.$lte = end;
-      }
-    }
+
+    console.log("Final query:", query);
+
+    console.log("Executing Order.find(query)...");
+    const orders = await Order.find(query)
+      .populate("shop", "name businessType address")
+      .populate("items.product", "name price")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    console.log("Found orders:", orders.length);
+    res.json({ orders });
+  } catch (error) {
+    console.error("ERROR in getOrderHistory:", error);
+    res.status(500).json({ message: error.message, stack: error.stack });
   }
-
-  console.log("Final query:", query);
-
-  const orders = await Order.find(query)
-    .populate("shop", "name businessType address")
-    .populate("items.product", "name price")
-    .sort({ createdAt: -1 })
-    .lean();
-
-  console.log("Found orders:", orders.length);
-
-  res.json({ orders });
 });
 
 

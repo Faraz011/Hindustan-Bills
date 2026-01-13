@@ -1,8 +1,9 @@
 import https from 'node:https';
+import http from 'node:http';
 
 /**
- * Pings the server periodically to prevent Render from spinning down the free tier.
- * @param {string} url - The base URL of the backend (e.g. from process.env.BACKEND_URL)
+ 
+ * @param {string} url
  */
 export const startKeepAlive = (url) => {
   if (!url) {
@@ -11,11 +12,12 @@ export const startKeepAlive = (url) => {
   }
 
   const interval = 14 * 60 * 1000;
+  const protocol = url.startsWith('https') ? https : http;
 
   console.log(`Health keep-alive started for ${url}`);
 
   setInterval(() => {
-    https.get(`${url}/api/health`, (res) => {
+    protocol.get(`${url}/api/health`, (res) => {
       console.log(`Self-ping success: ${res.statusCode}`);
     }).on('error', (err) => {
       console.error(`Self-ping failed: ${err.message}`);

@@ -3,18 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowLeft, 
-  CheckCircle, 
   ShieldCheck, 
   Zap, 
   Info, 
   ChevronRight,
   Smartphone,
   QrCode,
-  ExternalLink,
-  CreditCard
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../../../api/axios";
+import PaymentScanner from "../components/PaymentScanner";
 
 interface MenuCartData {
   items: any[];
@@ -30,6 +28,7 @@ export default function UpiPaymentPage() {
   const [cart, setCart] = useState<MenuCartData | null>(null);
   const [loading, setLoading] = useState(true);
   const [paymentMode, setPaymentMode] = useState<'intent' | 'collect'>('intent');
+  const [showScanner, setShowScanner] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -39,6 +38,7 @@ export default function UpiPaymentPage() {
   const fetchCart = async () => {
     try {
       const response = await api.get("/api/menu/cart");
+      console.log("Fetched Cart Data:", response);
       setCart(response as any);
     } catch (error) {
       console.error("Failed to fetch menu cart:", error);
@@ -48,36 +48,50 @@ export default function UpiPaymentPage() {
     }
   };
 
-  const generateIntentLink = () => {
-    if (!cart?.shopUpiId || !cart?.total) return "";
-    const merchantName = encodeURIComponent("Hindustan Bills Merchant");
-    const amount = cart.total.toFixed(2);
-    const transactionNote = encodeURIComponent(`Order_HB_${Date.now()}`);
-    return `upi://pay?pa=${cart.shopUpiId}&pn=${merchantName}&am=${amount}&cu=INR&tn=${transactionNote}`;
+
+  const handleIntentPay = () => {
+    console.log("handleIntentPay triggered");
+    toast.dismiss();
+    toast.loading("Starting Scanner...", { duration: 1000 });
+    setShowScanner(true);
   };
 
-  const handleIntentPay = async () => {
-    const link = generateIntentLink();
-    if (!link) {
-      toast.error("Retailer UPI details missing");
-      return;
-    }
-
-    // Submit order first so retailer sees it
+  const handleScanSuccess = async (scannedData: string) => {
     setIsProcessing(true);
     try {
-      await api.post("/api/orders/create-from-cart", { upiId: cart?.shopUpiId, paymentMode: 'intent' });
+      let extractedUpiId = cart?.shopUpiId;
       
-      // Attempt to open UPI App
-      window.location.href = link;
+      if (scannedData.startsWith("upi://pay")) {
+        const urlParams = new URLSearchParams(scannedData.split("?")[1]);
+        const pa = urlParams.get("pa");
+        if (pa) {
+          extractedUpiId = pa;
+        }
+      }
+
+      // Submit order to backend
+      await api.post("/api/orders/create-from-cart", { 
+        upiId: extractedUpiId, 
+        paymentMode: 'intent',
+        qrData: scannedData 
+      });
       
-      toast.success("Opening UPI App...");
-      // Wait a bit then redirect to orders
+      // Redirect to UPI App
+      if (scannedData.startsWith("upi://pay")) {
+        console.log("Redirecting to UPI Intent:", scannedData);
+        window.location.href = scannedData;
+        toast.success("Opening UPI App...");
+      } else {
+        toast.error("Not a valid UPI payment QR code");
+        return;
+      }
+      
+      // Navigate to orders after a delay
       setTimeout(() => {
         navigate("/customer/dashboard/orders");
       }, 3000);
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to initiate payment");
+      toast.error(error.response?.data?.message || "Failed to complete payment");
     } finally {
       setIsProcessing(false);
     }
@@ -143,7 +157,7 @@ export default function UpiPaymentPage() {
               onClick={() => setPaymentMode('intent')}
               className={`flex-1 py-4 px-6 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${paymentMode === 'intent' ? 'bg-white shadow-xl shadow-black/5 text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
             >
-              Express Intent
+              Scan & Pay
             </button>
             <button 
               onClick={() => setPaymentMode('collect')}
@@ -188,23 +202,23 @@ export default function UpiPaymentPage() {
                       </div>
                       <div>
                         <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">Safe & Direct</p>
-                        <p className="text-base font-black tracking-tight">Pay via UPI App</p>
+                        <p className="text-base font-black tracking-tight">Scan Merchant QR</p>
                       </div>
                     </div>
                     <p className="text-xs text-white/50 font-medium leading-relaxed">
-                      This will open your default UPI app to pay directly to the retailer. No extra fees, instant settlement.
+                      Scan the merchant's physical QR code at the counter to complete your payment instantly.
                     </p>
                   </div>
                   <button
                     onClick={handleIntentPay}
-                    disabled={isProcessing || !cart?.shopUpiId}
-                    className="w-full py-5 bg-white text-gray-900 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:bg-emerald-400 transition-all active:scale-95 shadow-xl shadow-white/5"
+                    disabled={isProcessing || !cart || cart.items.length === 0}
+                    className="w-full py-5 bg-white text-gray-900 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:bg-emerald-400 transition-all active:scale-95 shadow-xl shadow-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isProcessing ? (
                       <div className="w-5 h-5 border-2 border-gray-900/20 border-t-gray-900 rounded-full animate-spin"></div>
                     ) : (
                       <>
-                        Pay ₹{cart?.total.toFixed(0)} <ExternalLink className="w-4 h-4" />
+                        Scan to Pay ₹{cart?.total?.toFixed(0) || "0"} <QrCode className="w-4 h-4" />
                       </>
                     )}
                   </button>
@@ -272,7 +286,7 @@ export default function UpiPaymentPage() {
                       <span className="text-[10px] font-black text-gray-400">0{idx + 1}</span>
                       <span className="font-bold text-gray-600 uppercase tracking-tight">{item.name} <span className="text-[10px] text-gray-400">x{item.quantity}</span></span>
                     </div>
-                    <span className="font-black text-gray-900">₹{(item.price * item.quantity).toFixed(0)}</span>
+                    <span className="font-black text-gray-900">₹{((item.price || 0) * (item.quantity || 1)).toFixed(0)}</span>
                   </div>
                 ))}
               </div>
@@ -281,11 +295,11 @@ export default function UpiPaymentPage() {
             <div className="space-y-3 pt-6 border-t border-gray-50">
               <div className="flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                 <span>Subtotal</span>
-                <span>₹{cart?.subtotal.toFixed(2)}</span>
+                <span>₹{cart?.subtotal?.toFixed(2) || "0.00"}</span>
               </div>
               <div className="flex justify-between items-center pt-4">
                 <span className="text-lg font-black text-gray-900 uppercase tracking-tighter">Net Total</span>
-                <span className="text-3xl font-black text-[#561485] tracking-tighter">₹{cart?.total.toFixed(2)}</span>
+                <span className="text-3xl font-black text-[#561485] tracking-tighter">₹{cart?.total?.toFixed(2) || "0.00"}</span>
               </div>
             </div>
           </div>
@@ -301,6 +315,13 @@ export default function UpiPaymentPage() {
           </div>
         </section>
       </div>
+
+      {showScanner && (
+        <PaymentScanner 
+          onScanSuccess={handleScanSuccess}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
     </div>
   );
 }

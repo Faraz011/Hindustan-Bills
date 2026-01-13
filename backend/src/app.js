@@ -43,6 +43,12 @@ const rateLimiter = (maxRequests = 100, windowMs = 15 * 60 * 1000) => {
 
 const app = express();
 
+// Global request logger
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
 // Middleware
 app.use(
   cors({
