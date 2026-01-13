@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react'
-import { getCart, updateCartItem, removeFromCart, placeOrder } from '../lib/api'
+import { getRetailCart, updateRetailCartItem, removeFromRetailCart, placeOrder } from '../lib/api'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 
@@ -12,7 +12,7 @@ export default function CartPage(){
 
   const fetchCart = async ()=> {
     try{
-      const res = await getCart()
+      const res = await getRetailCart()
       setCart(res)
     }catch(err:any){
       // ignore
@@ -21,14 +21,14 @@ export default function CartPage(){
 
   const changeQty = async (pid:string, qty:number)=>{
     try{
-      await updateCartItem(pid, qty)
+      await updateRetailCartItem(pid, qty)
       fetchCart()
     }catch(err:any){ toast.error('Failed') }
   }
 
   const remove = async (pid:string)=>{
     try{
-      await removeFromCart(pid)
+      await removeFromRetailCart(pid)
       fetchCart()
     }catch(err:any){ toast.error('Failed') }
   }
