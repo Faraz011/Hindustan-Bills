@@ -2,9 +2,7 @@ import Product from "../models/Product.js";
 import Cart from "../models/Cart.js";
 import asyncHandler from "express-async-handler";
 
-// @desc    Add product to cart from menu
-// @route   POST /api/menu/add-to-cart
-// @access  Private
+
 export const addToCart = asyncHandler(async (req, res) => {
   const { productId, quantity = 1 } = req.body;
   const userId = req.user.id;
@@ -14,7 +12,7 @@ export const addToCart = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Product ID is required" });
   }
 
-  console.log(`🔍 Adding product to cart: ${productId} for user: ${userId}`);
+  console.log(` Adding product to cart: ${productId} for user: ${userId}`);
 
   // Get selected shop from request body or headers
   const shopId = req.body.shopId || req.headers["x-selected-shop"];
@@ -69,7 +67,7 @@ export const addToCart = asyncHandler(async (req, res) => {
     });
   }
 
-  // Save the cart
+  
   await cart.save();
 
   console.log(`✅ Product added to cart: ${product.name} (Qty: ${quantity})`);
@@ -89,7 +87,6 @@ export const addToCart = asyncHandler(async (req, res) => {
 export const getCart = asyncHandler(async (req, res) => {
   const userId = req.user.id;
 
-  // Find user's cart and populate product details
   const cart = await Cart.findOne({ user: userId }).populate({
     path: "items.product",
     select: "_id name price image category description",
@@ -152,14 +149,14 @@ export const updateCartItem = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Quantity must be at least 1" });
   }
 
-  // Find user's cart
+ 
   const cart = await Cart.findOne({ user: userId });
 
   if (!cart) {
     return res.status(404).json({ message: "Cart not found" });
   }
 
-  // Find the item in cart
+
   const itemIndex = cart.items.findIndex(
     (item) => item.product.toString() === productId
   );
@@ -168,10 +165,10 @@ export const updateCartItem = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "Item not found in cart" });
   }
 
-  // Update quantity
+  
   cart.items[itemIndex].quantity = quantity;
 
-  // Save the cart
+  
   await cart.save();
 
   res.json({
@@ -179,21 +176,18 @@ export const updateCartItem = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Remove item from cart
-// @route   DELETE /api/menu/cart/:productId
-// @access  Private
 export const removeFromCart = asyncHandler(async (req, res) => {
   const { productId } = req.params;
   const userId = req.user.id;
 
-  // Find user's cart
+  
   const cart = await Cart.findOne({ user: userId });
 
   if (!cart) {
     return res.status(404).json({ message: "Cart not found" });
   }
 
-  // Find the item in cart
+  
   const itemIndex = cart.items.findIndex(
     (item) => item.product.toString() === productId
   );
@@ -202,10 +196,10 @@ export const removeFromCart = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "Item not found in cart" });
   }
 
-  // Remove the item from cart
+  
   cart.items.splice(itemIndex, 1);
 
-  // Save the cart
+ 
   await cart.save();
 
   res.json({
