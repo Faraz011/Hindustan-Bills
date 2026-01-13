@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-import { ShoppingCart, Trash2, Plus, Minus, CreditCard } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ShoppingCart, Trash2, Plus, Minus, CreditCard, ShoppingBag, Receipt } from "lucide-react";
 
 interface CartItem {
   _id: string;
@@ -31,161 +32,130 @@ export default function Cart({
     total: 0,
   });
 
-  // Calculate totals
   useEffect(() => {
     let subtotal = 0;
     let tax = 0;
-
     items.forEach((item) => {
       const itemSubtotal = item.price * item.quantity;
       const itemTax = itemSubtotal * item.taxRate;
       subtotal += itemSubtotal;
       tax += itemTax;
     });
-
-    setSummary({
-      subtotal,
-      tax,
-      total: subtotal + tax,
-    });
+    setSummary({ subtotal, tax, total: subtotal + tax });
   }, [items]);
 
   if (items.length === 0) {
     return (
-      <div className="bg-gradient-to-br from-gray-50 to-gray-100 shadow-xl rounded-2xl p-12 text-center border border-gray-200">
-        <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-          <ShoppingCart className="h-12 w-12 text-blue-600" />
+      <div className="bg-white rounded-[2.5rem] border border-gray-50 p-12 text-center shadow-sm">
+        <div className="w-20 h-20 bg-gray-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 border border-gray-100">
+          <ShoppingBag className="h-10 w-10 text-gray-200" />
         </div>
-        <h3 className="text-2xl font-bold text-gray-800 mb-3">
-          Your cart is empty
-        </h3>
-        <p className="text-gray-600 mb-8 text-lg">
-          Start scanning products to add them to your cart
-        </p>
-        <div className="text-6xl animate-bounce">🛒</div>
+        <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest">Your bag is empty</h3>
+        <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest mt-2">Start scanning to add items</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-      {/* Cart Header */}
-      <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-6">
-        <h2 className="text-2xl font-bold text-white flex items-center">
-          <ShoppingCart className="h-7 w-7 mr-3" />
-          Shopping Cart
-        </h2>
-        <p className="text-green-100 mt-1">
-          {items.length} item{items.length !== 1 ? "s" : ""} in cart
-        </p>
+    <div className="bg-white rounded-[2.5rem] border border-gray-50 shadow-xl shadow-[#561485]/5 overflow-hidden flex flex-col h-full">
+      {/* Header */}
+      <div className="p-8 border-b border-gray-50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-[#561485]/5 rounded-xl text-[#561485]">
+              <ShoppingCart className="w-5 h-5" />
+            </div>
+            <h2 className="text-sm font-black uppercase tracking-widest text-gray-900">Your Cart</h2>
+          </div>
+          <span className="text-[10px] font-black bg-[#561485] text-white px-3 py-1 rounded-full uppercase tracking-widest">
+            {items.length} Units
+          </span>
+        </div>
       </div>
 
-      {/* Cart Items */}
-      <div className="p-6">
-        <div className="space-y-4 max-h-80 overflow-y-auto mb-6">
-          {items.map((item) => {
-            const itemSubtotal = item.price * item.quantity;
-            const itemTax = itemSubtotal * item.taxRate;
-            const itemTotal = itemSubtotal + itemTax;
+      {/* Items Scroll Area */}
+      <div className="flex-1 overflow-y-auto max-h-[400px] p-6 space-y-3 custom-scrollbar">
+        <AnimatePresence mode="popLayout">
+          {items.map((item) => (
+            <motion.div
+              layout
+              key={item._id}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="group bg-gray-50/50 hover:bg-white hover:shadow-xl hover:shadow-[#561485]/5 border border-transparent hover:border-gray-100 rounded-3xl p-5 transition-all"
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex-1">
+                  <h4 className="text-xs font-black text-gray-900 uppercase tracking-tighter leading-none">{item.name}</h4>
+                  <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">₹{item.price.toFixed(2)} / unit</p>
+                </div>
+                <button
+                  onClick={() => {
+                    onRemoveItem(item._id);
+                    toast.success("Item removed");
+                  }}
+                  className="opacity-0 group-hover:opacity-100 p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
 
-            return (
-              <div
-                key={item._id}
-                className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-gray-300 transition-colors"
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-800 text-sm leading-tight">
-                      {item.name}
-                    </h4>
-                    <p className="text-xs text-gray-500 mt-1">
-                      ₹{item.price.toFixed(2)} each
-                    </p>
-                  </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center bg-white rounded-2xl border border-gray-100 p-1 shadow-sm">
                   <button
-                    onClick={() => {
-                      onRemoveItem(item._id);
-                      toast.success(`${item.name} removed`);
-                    }}
-                    className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition-colors"
-                    title="Remove item"
+                    onClick={() => onUpdateQuantity(item._id, Math.max(1, item.quantity - 1))}
+                    className="p-2 text-gray-400 hover:text-rose-500 transition-colors disabled:opacity-30"
+                    disabled={item.quantity <= 1}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  <span className="w-8 text-center text-[10px] font-black text-gray-900">{item.quantity}</span>
+                  <button
+                    onClick={() => onUpdateQuantity(item._id, item.quantity + 1)}
+                    className="p-2 text-gray-400 hover:text-[#561485] transition-colors"
+                  >
+                    <Plus className="w-3 h-3" />
                   </button>
                 </div>
-
-                <div className="flex items-center justify-between">
-                  {/* Quantity Controls */}
-                  <div className="flex items-center bg-white rounded-lg border border-gray-300">
-                    <button
-                      onClick={() =>
-                        onUpdateQuantity(
-                          item._id,
-                          Math.max(1, item.quantity - 1)
-                        )
-                      }
-                      className="px-3 py-1 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-l-lg transition-colors"
-                      disabled={item.quantity <= 1}
-                    >
-                      <Minus className="h-4 w-4" />
-                    </button>
-                    <span className="px-4 py-1 font-semibold text-gray-800 border-x border-gray-300">
-                      {item.quantity}
-                    </span>
-                    <button
-                      onClick={() =>
-                        onUpdateQuantity(item._id, item.quantity + 1)
-                      }
-                      className="px-3 py-1 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-r-lg transition-colors"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </button>
-                  </div>
-
-                  {/* Item Total */}
-                  <div className="text-right">
-                    <p className="font-bold text-lg text-gray-800">
-                      ₹{itemTotal.toFixed(2)}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      incl. ₹{itemTax.toFixed(2)} tax
-                    </p>
-                  </div>
+                <div className="text-right">
+                  <p className="text-sm font-black text-gray-900 tracking-tighter leading-none">
+                    ₹{(item.price * item.quantity * (1 + item.taxRate)).toFixed(2)}
+                  </p>
+                  <p className="text-[8px] font-bold text-gray-300 uppercase tracking-widest mt-0.5">Incl. Tax</p>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
 
-        {/* Summary */}
-        <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Subtotal:</span>
-            <span className="font-medium">₹{summary.subtotal.toFixed(2)}</span>
+      {/* Summary & Checkout */}
+      <div className="p-8 bg-gray-50/50 border-t border-gray-50 space-y-6">
+        <div className="space-y-3">
+          <div className="flex justify-between items-center text-[10px] uppercase font-bold tracking-widest text-gray-400">
+            <span>Subtotal</span>
+            <span className="text-gray-900">₹{summary.subtotal.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Tax (GST):</span>
-            <span className="font-medium">₹{summary.tax.toFixed(2)}</span>
+          <div className="flex justify-between items-center text-[10px] uppercase font-bold tracking-widest text-gray-400">
+            <span>GST / Taxes</span>
+            <span className="text-gray-900">₹{summary.tax.toFixed(2)}</span>
           </div>
-          <div className="border-t border-gray-300 pt-3">
-            <div className="flex justify-between text-lg font-bold">
-              <span>Total:</span>
-              <span className="text-green-600">
-                ₹{summary.total.toFixed(2)}
-              </span>
+          <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+            <div className="flex items-center gap-2">
+              <Receipt className="w-4 h-4 text-[#561485]" />
+              <span className="text-xs font-black uppercase tracking-widest text-gray-900">Total Payable</span>
             </div>
+            <span className="text-xl font-black text-[#561485] tracking-tighter">₹{summary.total.toFixed(2)}</span>
           </div>
         </div>
 
-        {/* Checkout Button */}
         <button
           onClick={onCheckout}
-          className="w-full mt-6 px-6 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 shadow-lg"
+          className="w-full py-5 bg-gradient-to-r from-[#561485] to-[#3C47BA] text-white rounded-[1.5rem] font-black uppercase tracking-tighter text-sm flex items-center justify-center gap-3 shadow-xl shadow-[#561485]/20 hover:shadow-[#561485]/40 transition-all active:scale-95"
         >
-          <span className="flex items-center justify-center">
-            <CreditCard className="h-5 w-5 mr-2" />
-            Proceed to Payment
-          </span>
+          <CreditCard className="w-4 h-4" />
+          Checkout Securely
         </button>
       </div>
     </div>
