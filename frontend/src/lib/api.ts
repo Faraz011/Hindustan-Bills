@@ -11,7 +11,7 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("hb_token");
-  if (token) {
+  if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
@@ -23,13 +23,14 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem("hb_token");
-      window.location.href = "/login";
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   }
 );
 
-// Types
 export interface User {
   id: string;
   name: string;
@@ -86,14 +87,25 @@ export interface Product {
 
 export interface Order {
   _id: string;
+  orderNumber?: string;
+  customer?: {
+    name: string;
+    email: string;
+  };
   customerName?: string;
   customerPhone?: string;
-  products: Array<{
+  items: Array<{
+    product: Product;
+    quantity: number;
+    price: number;
+  }>;
+  products?: Array<{
     product: string | Product;
     quantity: number;
     price: number;
   }>;
-  totalAmount: number;
+  total?: number;
+  totalAmount?: number;
   status: string;
   paymentStatus?: string;
   createdAt: string;
@@ -101,15 +113,16 @@ export interface Order {
   shop?: string;
 }
 
-export interface Order {
-  _id: string;
-  items: Array<{ product: Product; quantity: number; price: number }>;
-  total: number;
-  status: string;
-  createdAt: string;
+
+export interface ApiResponse<T> {
+  success?: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+  [key: string]: any;
 }
 
-// -------------------- Auth --------------------
+
 export const login = async (data: { email: string; password: string }) => {
   return api.post("/api/auth/login", data);
 };
@@ -123,51 +136,65 @@ export const register = async (data: {
   return api.post("/api/auth/register", data);
 };
 
-// -------------------- Shops --------------------
+
 export const getShopDetails = async (): Promise<Shop> => {
-  return api.get("/api/shop/details");
+  const res = await api.get("/api/shop/details");
+  return res as unknown as Shop;
 };
 
 export const updateShopDetails = async (data: Partial<Shop>): Promise<Shop> => {
-  return api.put("/api/shop/details", data);
+  const res = await api.put("/api/shop/details", data);
+  return res as unknown as Shop;
 };
 
 export const getShopProducts = async (): Promise<Product[]> => {
-  return api.get("/api/products");
+  const res = await api.get("/api/products");
+  return res as unknown as Product[];
 };
 
 export const getShopOrders = async (): Promise<Order[]> => {
-  return api.get("/api/orders");
+  const res = await api.get("/api/shop/orders");
+  return res as unknown as Order[];
 };
 
 export const getNearbyShops = async (
   lat: number,
   lng: number
 ): Promise<Shop[]> => {
-  return api.get(`/api/shops/nearby?lat=${lat}&lng=${lng}`);
+  const res = await api.get(`/shops/nearby?lat=${lat}&lng=${lng}`);
+  return res as unknown as Shop[];
 };
 
 export const listShops = async (): Promise<Shop[]> => {
-  return api.get("/api/shops");
+  const res = await api.get("api/shops");
+  return res as unknown as Shop[];
 };
 
-// -------------------- Products --------------------
-export const getProducts = async (shopId?: string): Promise<Product[]> => {
-  const url = shopId ? `/api/products?shopId=${shopId}` : "/api/products";
-  const res = await api.get<{ products?: Product[] } | Product[]>(url);
-
+export const getAvailableShops = async (): Promise<Shop[]> => {
+  const res = await api.get("/api/shop/available");
   const data = res as any;
+ 
+  return data.shops || (Array.isArray(data) ? data : []);
+};
+
+
+export const getProducts = async (shopId?: string): Promise<Product[]> => {
+  const url = shopId ? `api/products/shop/${shopId}` : "/products";
+  const res = await api.get(url);
+  const data = res as any;
+
   if (Array.isArray(data)) return data;
-  return data.products ?? [];
+  return data.products || [];
 };
 
 export const getProductByBarcode = async (
   barcode: string
 ): Promise<Product> => {
-  const res = await api.get<{ product?: Product }>(
+  const res = await api.get(
     `/api/products/barcode/${encodeURIComponent(barcode)}`
   );
-  return (res as any).product ?? (res as any);
+  const data = res as any;
+  return data.product || data;
 };
 
 export const addProduct = async (data: Partial<Product>) => {
@@ -175,37 +202,59 @@ export const addProduct = async (data: Partial<Product>) => {
 };
 
 export const updateProduct = async (id: string, data: Partial<Product>) => {
-  return api.put(`/api/products/${id}`, data);
+  return api.put(`api/products/${id}`, data);
 };
 
 export const deleteProduct = async (id: string) => {
-  return api.delete(`/api/products/${id}`);
+  return api.delete(`api/products/${id}`);
 };
 
-// -------------------- Cart (barcode routes) --------------------
-export const addToCart = async (productId: string, quantity = 1) => {
-  return api.post("/api/cart", {
+
+// Menu Cart APIs
+export const addToCart = async (productId: string, quantity = 1, shopId?: string) => {
+  const requestBody: any = {
     productId,
     quantity,
-  });
+  };
+  
+  if (shopId) {
+    requestBody.shopId = shopId;
+  }
+  
+  return api.post("/api/menu/add-to-cart", requestBody);
 };
 
 export const getCart = async () => {
-  const res = await api.get<{ cart?: any; items?: any[] }>("/api/cart");
-  // backend may return { cart: {...} } or { items: [...] }
-  if ((res as any).cart) return (res as any).cart;
-  return res;
+  const res = await api.get("/api/menu/cart");
+  return res as any;
 };
 
 export const removeFromCart = async (productId: string) => {
-  return api.delete(`/api/cart/${productId}`);
+  return api.delete(`/api/menu/cart/${productId}`);
 };
 
 export const updateCartItem = async (productId: string, quantity: number) => {
-  return api.post("/api/barcode/cart/update", { productId, quantity });
+  return api.put(`/api/menu/cart/${productId}`, { quantity });
 };
 
-// -------------------- Orders --------------------
+// Retail Cart APIs (Regular Shop)
+export const getRetailCart = async () => {
+  const res = await api.get("/api/cart");
+  return res as any;
+};
+
+export const addToRetailCart = async (productId: string, quantity = 1) => {
+  return api.post("/api/cart", { productId, quantity });
+};
+
+export const updateRetailCartItem = async (productId: string, quantity: number) => {
+  return api.put(`/api/cart/${productId}`, { quantity });
+};
+
+export const removeFromRetailCart = async (productId: string) => {
+  return api.delete(`/api/cart/${productId}`);
+};
+
 export const placeOrder = async () => {
   return api.post("/api/orders/order");
 };
@@ -214,37 +263,30 @@ export const updateOrderStatus = async (orderId: string, status: string) => {
   return api.put(`/api/orders/${orderId}/status`, { status });
 };
 
-export const getOrders = async () => {
-  const res = await api.get<{ orders?: Order[] }>("/api/shop/orders");
-  return res.orders ?? res ?? [];
+export const getOrders = async (): Promise<Order[]> => {
+  const res = await api.get("/api/shop/orders");
+  const data = res as any;
+  return data.orders || (Array.isArray(data) ? data : []);
 };
 
 export const getOrdersHistory = async (params?: {
   status?: string;
   startDate?: string;
   endDate?: string;
-}) => {
+}): Promise<Order[]> => {
   const query = new URLSearchParams();
   if (params?.status) query.set("status", params.status);
   if (params?.startDate) query.set("startDate", params.startDate);
   if (params?.endDate) query.set("endDate", params.endDate);
-  const res = await api.get<{ orders?: Order[] }>(
-    `/api/orders/history?${query.toString()}`
-  );
-  return res.orders || [];
+
+  const res = await api.get(`/api/orders/history?${query.toString()}`);
+  const data = res as any;
+  return data.orders || (Array.isArray(data) ? data : []);
 };
 
-// -------------------- Shops --------------------
-export const getAvailableShops = async () => {
-  const res = await api.get<{ shops: Shop[]; count: number }>(
-    "/api/shop/available"
-  );
-  return res.shops || [];
-};
 
-// -------------------- Payments (optional) --------------------
 export const createPayment = async (data: any) => {
   return api.post("/api/payments/create", data);
 };
 
-export default {};
+export default api;
