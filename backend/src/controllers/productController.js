@@ -64,7 +64,7 @@ export const createProduct = asyncHandler(async (req, res) => {
     price,
     category: category || "other",
     stock: stock || 0,
-    image: imageUrl || "/placeholder-product.png",
+    image: image || "/placeholder-product.png",
     shop: shop._id,
     metadata: {
       barcode: barcode && barcode.trim() !== "" ? barcode.trim() : undefined,
