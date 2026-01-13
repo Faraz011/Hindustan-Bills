@@ -79,17 +79,31 @@ export default function UpiPaymentPage() {
       // Redirect to UPI App
       if (scannedData.startsWith("upi://pay")) {
         console.log("Redirecting to UPI Intent:", scannedData);
-        window.location.href = scannedData;
-        toast.success("Opening UPI App...");
+        
+        // Attempt redirection using a more reliable method for mobile deep links
+        try {
+          const upiLink = document.createElement('a');
+          upiLink.href = scannedData;
+          upiLink.style.display = 'none';
+          document.body.appendChild(upiLink);
+          upiLink.click();
+          document.body.removeChild(upiLink);
+          
+          toast.success("Opening UPI App...");
+        } catch (e) {
+          console.error("Redirection error:", e);
+          // Fallback if click fails
+          window.location.href = scannedData;
+        }
       } else {
         toast.error("Not a valid UPI payment QR code");
         return;
       }
       
-      // Navigate to orders after a delay
+      // Navigate to orders after a longer delay to ensure protocol launch isn't interrupted
       setTimeout(() => {
         navigate("/customer/dashboard/orders");
-      }, 3000);
+      }, 5000);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to complete payment");
     } finally {
