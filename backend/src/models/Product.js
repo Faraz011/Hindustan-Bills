@@ -111,4 +111,17 @@ const productSchema = new mongoose.Schema(
 productSchema.index({ name: "text", description: "text" });
 productSchema.index({ shop: 1, isActive: 1 });
 
+// Pre-save hook to handle empty strings for unique/sparse fields
+productSchema.pre("save", function (next) {
+  if (this.metadata) {
+    if (this.metadata.barcode === "") {
+      this.metadata.barcode = undefined;
+    }
+    if (this.metadata.sku === "") {
+      this.metadata.sku = undefined;
+    }
+  }
+  next();
+});
+
 export default mongoose.model("Product", productSchema);

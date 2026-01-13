@@ -279,6 +279,7 @@ import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { jwtDecode } from 'jwt-decode'
 import api from '../api/axios'
 
 interface RegisterForm {
@@ -332,6 +333,13 @@ const Register = () => {
       // If backend returns a token, consider user logged in
       if (resData && resData.token && typeof resData.token === 'string' && resData.token.length > 0) {
         localStorage.setItem('hb_token', resData.token)
+        const decodedToken: any = jwtDecode(resData.token)
+        localStorage.setItem('user', JSON.stringify({
+          id: decodedToken.id,
+          role: decodedToken.role,
+          name: decodedToken.name,
+          email: decodedToken.email
+        }))
         toast.success('Registration successful! Let\'s set up your profile.')
         navigate('/complete-setup')
         return

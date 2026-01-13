@@ -87,6 +87,8 @@ const Login = () => {
       const userData = {
         id: decodedToken.id,
         role: decodedToken.role,
+        name: decodedToken.name,
+        email: decodedToken.email,
       };
 
       localStorage.setItem("user", JSON.stringify(userData));

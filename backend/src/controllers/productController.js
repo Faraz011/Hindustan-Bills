@@ -67,8 +67,8 @@ export const createProduct = asyncHandler(async (req, res) => {
     image: imageUrl || "/placeholder-product.png",
     shop: shop._id,
     metadata: {
-      barcode: barcode || undefined, // Ensure barcode is not null
-      sku: sku || undefined,
+      barcode: barcode && barcode.trim() !== "" ? barcode.trim() : undefined,
+      sku: sku && sku.trim() !== "" ? sku.trim() : undefined,
     },
     dietaryInfo,
     preparationTime,
@@ -125,10 +125,13 @@ export const updateProduct = asyncHandler(async (req, res) => {
   if (isAvailable !== undefined) product.isAvailable = isAvailable;
 
   // Update metadata
+  const newBarcode = barcode !== undefined ? (barcode.trim() !== "" ? barcode.trim() : undefined) : product.metadata?.barcode;
+  const newSku = sku !== undefined ? (sku.trim() !== "" ? sku.trim() : undefined) : product.metadata?.sku;
+
   product.metadata = {
     ...product.metadata,
-    ...(barcode !== undefined && { barcode }),
-    ...(sku !== undefined && { sku }),
+    barcode: newBarcode,
+    sku: newSku,
   };
 
   const updatedProduct = await product.save();

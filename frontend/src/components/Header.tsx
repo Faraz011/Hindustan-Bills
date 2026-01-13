@@ -291,6 +291,7 @@ import { jwtDecode } from "jwt-decode";
 interface JwtPayload {
   id: string;
   role: string;
+  profileCompleted?: boolean;
   exp: number;
   iat: number;
 }
@@ -299,6 +300,7 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [isProfileComplete, setIsProfileComplete] = useState<boolean>(true);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -308,19 +310,24 @@ const Header = () => {
       try {
         const decoded = jwtDecode<JwtPayload>(token);
         setUserRole(decoded.role);
+        setIsProfileComplete(decoded.profileCompleted !== false);
         setIsLoggedIn(true);
       } catch (error) {
         console.error("Error decoding token:", error);
         handleLogout();
       }
+    } else {
+      setIsLoggedIn(false);
+      setUserRole(null);
     }
-  }, []);
+  }, [location.pathname]);
 
   const handleLogout = () => {
     localStorage.removeItem("hb_token");
     localStorage.removeItem("user");
     setIsLoggedIn(false);
     setUserRole(null);
+    setIsProfileComplete(true);
     navigate("/");
   };
 
@@ -411,14 +418,23 @@ const Header = () => {
             <div className="ml-4 flex items-center md:ml-6">
               {isLoggedIn ? (
                 <div className="flex items-center space-x-4">
-                  {userRole === "retailer" && (
+                  {!isProfileComplete ? (
                     <Link
-                      to="/retailer-dashboard"
-                      className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                      to="/complete-setup"
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#561485] hover:bg-[#3C47BA] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#561485]"
                     >
-                      <User size={16} className="mr-1.5" />
-                      Dashboard
+                      Complete Setup
                     </Link>
+                  ) : (
+                    userRole === "retailer" && (
+                      <Link
+                        to="/retailer/dashboard"
+                        className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                      >
+                        <User size={16} className="mr-1.5" />
+                        Dashboard
+                      </Link>
+                    )
                   )}
                   <button
                     onClick={handleLogout}
@@ -485,15 +501,26 @@ const Header = () => {
               <div className="pt-4 pb-3 border-t border-gray-200">
                 {isLoggedIn ? (
                   <div className="space-y-3 px-4">
-                    {userRole === "retailer" && (
+                    {!isProfileComplete ? (
                       <Link
-                        to="/retailer/dashboard"
+                        to="/complete-setup"
                         onClick={() => setIsMenuOpen(false)}
-                        className="flex items-center px-4 py-2 text-base font-medium text-gray-700 rounded-md hover:bg-gray-100"
+                        className="flex items-center px-4 py-2 text-base font-medium text-white bg-[#561485] rounded-md hover:bg-[#3C47BA]"
                       >
-                        <User className="flex-shrink-0 h-5 w-5 text-gray-500 mr-3" />
-                        Dashboard
+                        <User className="flex-shrink-0 h-5 w-5 text-white mr-3" />
+                        Complete Setup
                       </Link>
+                    ) : (
+                      userRole === "retailer" && (
+                        <Link
+                          to="/retailer/dashboard"
+                          onClick={() => setIsMenuOpen(false)}
+                          className="flex items-center px-4 py-2 text-base font-medium text-gray-700 rounded-md hover:bg-gray-100"
+                        >
+                          <User className="flex-shrink-0 h-5 w-5 text-gray-500 mr-3" />
+                          Dashboard
+                        </Link>
+                      )
                     )}
                     <button
                       onClick={() => {

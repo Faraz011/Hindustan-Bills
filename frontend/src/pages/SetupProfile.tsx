@@ -78,6 +78,13 @@ const SetupProfile = () => {
 
       if (newToken) {
         localStorage.setItem("hb_token", newToken);
+        const decodedToken: any = jwtDecode(newToken);
+        localStorage.setItem("user", JSON.stringify({
+          id: decodedToken.id,
+          role: decodedToken.role,
+          name: decodedToken.name,
+          email: decodedToken.email
+        }));
       }
 
       toast.success("Profile updated successfully!");

@@ -15,15 +15,9 @@ import {
   X,
   Package,
   Barcode,
-  Clock,
   Leaf,
-  Flame,
-  Minus,
   Search,
-  ChevronRight,
-  ArrowRight,
-  Image as ImageIcon,
-  Tag
+  ImageIcon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -35,7 +29,7 @@ interface ProductFormData {
   category?: string;
   description?: string;
   stock?: number;
-  imageUrl?: string;
+  image?: string;
   dietaryInfo?: string[];
   preparationTime?: number;
   isAvailable?: boolean;
@@ -50,7 +44,7 @@ interface Product {
   category?: string;
   description?: string;
   stock?: number;
-  imageUrl?: string;
+  image?: string;
   shopId?: string;
   dietaryInfo?: string[];
   preparationTime?: number;
@@ -105,9 +99,17 @@ export default function Products() {
     try {
       const filteredData = { ...data };
       if (shopDetails?.businessType !== "restaurant") {
-        delete filteredData.dietaryInfo;
-        delete filteredData.preparationTime;
-        delete filteredData.isAvailable;
+        delete (filteredData as any).dietaryInfo;
+        delete (filteredData as any).preparationTime;
+        delete (filteredData as any).isAvailable;
+      }
+
+      // Handle empty barcode and sku
+      if (filteredData.barcode?.trim() === "") {
+        filteredData.barcode = undefined;
+      }
+      if (filteredData.sku?.trim() === "") {
+        filteredData.sku = undefined;
       }
 
       if (editingProduct) {
@@ -136,7 +138,7 @@ export default function Products() {
       category: product.category || "",
       description: product.description || "",
       stock: product.stock || 0,
-      imageUrl: product.imageUrl || "",
+      image: product.image || "",
       dietaryInfo: product.dietaryInfo || [],
       preparationTime: product.preparationTime || 0,
       isAvailable:
@@ -167,7 +169,7 @@ export default function Products() {
       category: "",
       description: "",
       stock: 0,
-      imageUrl: "",
+      image: "",
     });
     setIsModalOpen(true);
   };
@@ -446,7 +448,7 @@ export default function Products() {
                   <div className="md:col-span-2">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Image URL</label>
                     <input 
-                      {...register("imageUrl")}
+                      {...register("image" as any)}
                       placeholder="https://images..."
                       className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:bg-white focus:border-[#561485]/20 focus:outline-none transition-all"
                     />
