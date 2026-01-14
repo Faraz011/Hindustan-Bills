@@ -141,7 +141,7 @@ const MenuPage = () => {
           initial={{ scale: 1.1 }}
           animate={{ scale: 1 }}
           transition={{ duration: 1.5 }}
-          src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=1600"
+          src="https://res.cloudinary.com/dvui49kut/image/upload/v1768389417/gettyimages-1372697005-612x612_pqzjsl.jpg"
           alt="Banner"
           className="w-full h-full object-cover"
         />
@@ -166,7 +166,7 @@ const MenuPage = () => {
                 4.8 <Star className="w-3 h-3 fill-current" />
               </span>
               <span className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-[#A13266]" /> 25-30 Mins
+                <Clock className="w-4 h-4 text-[#A13266]" /> 10-15 Mins
               </span>
               <span className="w-1 h-1 bg-white/20 rounded-full"></span>
               <span>{selectedShop.address?.city || "Downtown"}</span>

@@ -47,13 +47,7 @@ const Hero = () => {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <button
-                  onClick={() => setIsScannerOpen(true)}
-                  className="btn-primary inline-flex items-center justify-center"
-                >
-                  <QrCode className="w-5 h-5 mr-2" />
-                  Scan Me
-                </button>
+                
                 <button
                   onClick={handleGetStarted}
                   className="btn-secondary inline-flex items-center justify-center"

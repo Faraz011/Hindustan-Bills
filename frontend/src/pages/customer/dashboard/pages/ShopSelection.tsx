@@ -57,7 +57,7 @@ export default function ShopSelection() {
   };
 
   const getTodaysHours = (shop: Shop) => {
-    if (!shop.businessHours) return "Hours not available";
+    if (!shop.businessHours) return "From 4pm to 9pm";
     const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
     const today = new Date().getDay();
     const dayName = days[today];
@@ -198,7 +198,7 @@ export default function ShopSelection() {
           }`}
         >
           <span className="relative z-10 flex items-center gap-3">
-            Enter Store Dashboard
+            start to order 
             <ChevronRight className={`h-5 w-5 transition-transform ${selectedShop ? 'group-hover:translate-x-1' : ''}`} />
           </span>
           {selectedShop && (

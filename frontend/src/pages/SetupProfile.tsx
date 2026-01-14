@@ -173,21 +173,22 @@ const SetupProfile = () => {
                   </div>
                 </label>
 
-                <label className="relative group cursor-pointer">
+                <label className="relative group cursor-not-allowed opacity-50">
                   <input
                     type="radio"
                     value="retailer"
                     {...register("role", { required: "Please select a role" })}
                     className="sr-only peer"
+                    disabled
                   />
-                  <div className="p-8 border-2 border-gray-100 rounded-[2rem] transition-all duration-300 group-hover:border-[#561485]/30 peer-checked:border-[#561485] peer-checked:bg-[#561485]/5 text-center h-full flex flex-col items-center">
-                    <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center mb-4 text-[#561485] group-hover:scale-110 transition-transform">
+                  <div className="p-8 border-2 border-gray-100 rounded-[2rem] text-center h-full flex flex-col items-center bg-gray-50">
+                    <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4 text-gray-300">
                       <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
                     </div>
-                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight mb-1">Retailer</h3>
-                    <p className="text-[10px] text-gray-500 font-bold leading-relaxed">Manage inventory and <br />track outlet sales</p>
+                    <h3 className="text-sm font-black text-gray-400 uppercase tracking-tight mb-1">Retailer</h3>
+                    <p className="text-[10px] text-gray-400 font-bold leading-relaxed">Access not allowed</p>
                   </div>
                 </label>
               </div>
