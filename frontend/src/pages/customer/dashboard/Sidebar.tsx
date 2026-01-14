@@ -28,7 +28,7 @@ const Sidebar = ({ onClose }: SidebarProps) => {
       path: "/customer/dashboard/shopping",
       icon: ShoppingCart,
     },
-    { name: "Cart", path: "/customer/dashboard/cart", icon: CreditCard },
+    { name: "Cart", path: "/customer/dashboard/menu-cart", icon: CreditCard },
     { name: "Orders", path: "/customer/dashboard/orders", icon: Package },
   ];
 

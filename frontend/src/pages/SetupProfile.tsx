@@ -29,13 +29,13 @@ const SetupProfile = () => {
   const role = watch("role");
 
   useEffect(() => {
-    // Check for token in URL (Google OAuth)
+    
     const urlToken = searchParams.get("token");
     if (urlToken) {
       localStorage.setItem("hb_token", urlToken);
     }
 
-    // Get current token
+   
     const token = localStorage.getItem("hb_token");
     
     if (token) {
@@ -90,16 +90,30 @@ const SetupProfile = () => {
       toast.success("Profile updated successfully!");
       
       // Navigate to respective dashboard
-      navigate(
-        data.role === "retailer" ? "/retailer/dashboard" : "/customer/dashboard"
-      );
+      if (data.role !== "customer") {
+        toast.error("Retailer access is not available.");
+        return;
+      }
+      navigate("/customer/dashboard");
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || "Failed to update profile";
+      const errorMessage =
+        err.response?.data?.message || "Failed to update profile";
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
-  };
+
+         
+     // navigate(
+     //   data.role === "customer" ? "/customer/dashboard" : "/retailer/dashboard"
+     // );
+    // } catch (err: any) {
+    //  const errorMessage = err.response?.data?.message || "Failed to update profile";
+     // toast.error(errorMessage);
+   // } finally {
+   //   setIsLoading(false);
+   // }
+   };
 
   if (!userInfo) {
     return (
@@ -130,7 +144,7 @@ const SetupProfile = () => {
               <span className="text-[#561485]">{userInfo.name.split(' ')[0]}!</span>
             </h2>
             <p className="text-xs font-black text-gray-400 uppercase tracking-widest mt-4">
-              Complete your business profile to get started
+              Complete your profile to get started
             </p>
           </div>
 
@@ -224,7 +238,7 @@ const SetupProfile = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-5 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-black/10 hover:bg-[#561485] transition-all transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-5 bg-[#561485] text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-black/10 hover:bg-[#561485] transition-all transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? "Finalizing Setup..." : "Complete Setup"}
             </button>

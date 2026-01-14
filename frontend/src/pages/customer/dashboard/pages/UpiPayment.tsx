@@ -117,7 +117,7 @@ export default function UpiPaymentPage() {
         <section className="space-y-10">
           <div className="space-y-2">
             <h1 className="text-5xl font-black text-gray-900 tracking-tighter uppercase leading-none">Payment</h1>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Open your upi app and scan the qr code to pay</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Scan QR to pay via UPI app</p>
           </div>
 
           <div className="space-y-8">
@@ -149,12 +149,6 @@ export default function UpiPaymentPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                 <button
-                  onClick={handlePayViaApp}
-                  className="py-5 bg-white border-2 border-gray-100 text-gray-900 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 hover:border-emerald-400 transition-all active:scale-95 shadow-lg shadow-black/5"
-                >
-                  Open UPI App <ExternalLink className="w-4 h-4" />
-                </button>
-                <button
                   onClick={handleConfirmOrder}
                   disabled={isProcessing || !cart}
                   className="py-5 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 shadow-xl shadow-black/10 hover:bg-emerald-500 transition-all active:scale-95 disabled:opacity-50"
@@ -163,7 +157,7 @@ export default function UpiPaymentPage() {
                     <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
                   ) : (
                     <>
-                      I've Paid <ShieldCheck className="w-4 h-4" />
+                      I've Paid <ShieldCheck className="w-4 h-4 text-emerald-500" />
                     </>
                   )}
                 </button>

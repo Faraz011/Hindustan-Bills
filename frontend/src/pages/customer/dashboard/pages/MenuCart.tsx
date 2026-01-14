@@ -117,7 +117,7 @@ export default function MenuCartPage() {
         </div>
         <button
           onClick={() => navigate("/customer/dashboard/shopping")}
-          className="px-10 py-5 bg-gray-900 text-white rounded-[1.5rem] font-black uppercase tracking-widest text-xs hover:bg-[#561485] transition-all shadow-xl shadow-black/10 active:scale-95"
+          className="px-10 py-5 bg-[#561485] text-white rounded-[1.5rem] font-black uppercase tracking-widest text-xs hover:bg-[#561485] transition-all shadow-xl shadow-black/10 active:scale-95"
         >
           Explore Menu
         </button>
@@ -140,22 +140,11 @@ export default function MenuCartPage() {
           <div className="space-y-1">
             <h1 className="text-5xl font-black text-gray-900 tracking-tighter uppercase leading-none">Your Bag</h1>
             <p className="text-[10px] font-black text-[#A13266] uppercase tracking-[0.2em] leading-none">
-              {cart.items.length} Items • {cart.items[0]?.shop?.name || "Premium Outlet"}
+              {cart.items.length} Items • {cart.items[0]?.shop?.name || "Apni Rasoi"}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="hidden md:flex flex-col items-end">
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Value</span>
-            <span className="text-2xl font-black text-gray-900 tracking-tighter leading-none">₹{cart.total.toFixed(0)}</span>
-          </div>
-          <button 
-            onClick={() => navigate("/customer/dashboard/upi-payment")}
-            className="bg-gray-900 text-white px-8 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-xs hover:bg-[#561485] transition-all shadow-2xl shadow-black/10 flex items-center gap-3 group"
-          >
-            Checkout <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </button>
-        </div>
+        
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
