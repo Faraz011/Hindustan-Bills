@@ -5,6 +5,7 @@ import {
   getCart,
   updateCartItem,
   removeFromCart,
+  updateTableNumber,
 } from "../controllers/menuController.js";
 
 const router = express.Router();
@@ -17,5 +18,6 @@ router.post("/add-to-cart", addToCart);
 router.get("/cart", getCart);
 router.put("/cart/:productId", updateCartItem);
 router.delete("/cart/:productId", removeFromCart);
+router.put("/table-number", updateTableNumber);
 
 export default router;

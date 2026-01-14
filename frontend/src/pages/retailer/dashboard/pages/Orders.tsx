@@ -263,6 +263,13 @@ export default function Orders() {
                       <User className="w-4 h-4 text-white/60" />
                       <span className="text-[10px] font-black uppercase tracking-widest text-white/80">{selectedOrder.customer?.name || 'Guest User'}</span>
                     </div>
+                    {selectedOrder.tableNumber && (
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 bg-white/20 rounded text-[10px] font-black uppercase tracking-widest text-white">
+                          Table: {selectedOrder.tableNumber}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

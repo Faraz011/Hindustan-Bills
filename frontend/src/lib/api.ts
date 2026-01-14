@@ -109,6 +109,7 @@ export interface Order {
   totalAmount?: number;
   status: string;
   paymentStatus?: string;
+  tableNumber?: string;
   createdAt: string;
   updatedAt?: string;
   shop?: string;
@@ -236,6 +237,10 @@ export const removeFromCart = async (productId: string) => {
 
 export const updateCartItem = async (productId: string, quantity: number) => {
   return api.put(`/api/menu/cart/${productId}`, { quantity });
+};
+
+export const updateTableNumber = async (tableNumber: string) => {
+  return api.put("/api/menu/table-number", { tableNumber });
 };
 
 // Retail Cart APIs (Regular Shop)

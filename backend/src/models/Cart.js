@@ -8,6 +8,9 @@ const cartSchema = new mongoose.Schema(
       required: true,
       unique: true, // ensures one cart per user
     },
+    tableNumber: {
+      type: String,
+    },
     items: [
       {
         product: {

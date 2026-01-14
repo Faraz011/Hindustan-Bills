@@ -141,6 +141,7 @@ export const getCart = asyncHandler(async (req, res) => {
     total,
     upiId,
     shopName,
+    tableNumber: cart.tableNumber,
   });
 });
 
@@ -209,5 +210,23 @@ export const removeFromCart = asyncHandler(async (req, res) => {
 
   res.json({
     message: "Item removed from cart successfully",
+  });
+});
+
+export const updateTableNumber = asyncHandler(async (req, res) => {
+  const { tableNumber } = req.body;
+  const userId = req.user.id;
+
+  const cart = await Cart.findOne({ user: userId });
+  if (!cart) {
+    return res.status(404).json({ message: "Cart not found" });
+  }
+
+  cart.tableNumber = tableNumber;
+  await cart.save();
+
+  res.json({
+    message: "Table number updated successfully",
+    tableNumber: cart.tableNumber,
   });
 });

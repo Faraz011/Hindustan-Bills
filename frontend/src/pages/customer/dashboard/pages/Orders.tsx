@@ -9,6 +9,7 @@ interface Order {
   total?: number;
   status: string;
   paymentStatus?: string;
+  tableNumber?: string;
   createdAt: string;
   items: Array<{
     product: {
@@ -200,7 +201,14 @@ export default function Orders() {
                   </div>
                   <div className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100 text-right">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Fulfillment</p>
-                    <p className="text-sm font-black text-gray-900 tracking-tight uppercase">{selectedOrder.status}</p>
+                    <p className="text-sm font-black text-gray-900 tracking-tight uppercase flex items-center justify-end gap-2">
+                      {selectedOrder.status}
+                      {selectedOrder.tableNumber && (
+                        <span className="px-2 py-0.5 bg-[#561485]/10 text-[#561485] rounded text-[8px] font-black">
+                         T-{selectedOrder.tableNumber}
+                        </span>
+                      )}
+                    </p>
                   </div>
                 </div>
 

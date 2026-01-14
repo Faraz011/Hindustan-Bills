@@ -40,6 +40,9 @@ const orderSchema = new mongoose.Schema(
       ref: "Shop",
       required: true,
     },
+    tableNumber: {
+      type: String,
+    },
     items: [orderItemSchema],
     subtotal: {
       type: Number,

@@ -250,6 +250,7 @@ export const createOrderFromCart = asyncHandler(async (req, res) => {
     orderNumber,
     customer: userId,
     shop: shopId,
+    tableNumber: cart.tableNumber,
     items: orderItems,
     subtotal,
     tax,

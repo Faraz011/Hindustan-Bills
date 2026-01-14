@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ShoppingBag, 
-  Trash2, 
   Plus, 
   Minus, 
   ArrowLeft, 
@@ -14,7 +13,7 @@ import {
   LayoutGrid
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { getCart, updateCartItem, removeFromCart } from "../../../../lib/api";
+import { getCart, updateCartItem, removeFromCart, updateTableNumber } from "../../../../lib/api";
 
 interface MenuCartItem {
   _id: string;
@@ -39,11 +38,13 @@ interface MenuCartData {
   subtotal: number;
   tax: number;
   total: number;
+  tableNumber?: string;
 }
 
 export default function MenuCartPage() {
   const [cart, setCart] = useState<MenuCartData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tableNumber, setTableNumber] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -54,10 +55,22 @@ export default function MenuCartPage() {
     try {
       const response = await getCart();
       setCart(response);
+      if (response.tableNumber) {
+        setTableNumber(response.tableNumber);
+      }
     } catch (err: any) {
       console.error("Failed to fetch menu cart:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTableNumberChange = async (val: string) => {
+    setTableNumber(val);
+    try {
+      await updateTableNumber(val);
+    } catch (err) {
+      console.error("Failed to update table number:", err);
     }
   };
 
@@ -216,31 +229,44 @@ export default function MenuCartPage() {
             </div>
 
             <div className="space-y-4">
-              <div className="flex justify-between items-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                <span>Items Subtotal</span>
-                <span className="text-gray-900">₹{cart.subtotal.toFixed(2)}</span>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Table Number</label>
+                <input
+                  type="text"
+                  placeholder="E.g. a2"
+                  value={tableNumber}
+                  onChange={(e) => handleTableNumberChange(e.target.value)}
+                  className="w-full bg-gray-50 border-2 border-transparent focus:border-[#561485]/20 focus:bg-white rounded-2xl px-6 py-4 text-sm font-bold uppercase tracking-widest placeholder:text-gray-300 transition-all outline-none"
+                />
               </div>
-              <div className="flex justify-between items-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                <span>Government Taxes</span>
-                <span className="text-gray-900">₹{cart.tax.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between items-center pt-6 border-t border-gray-100">
-                <span className="text-lg font-black text-gray-900 uppercase tracking-tighter">Grand Total</span>
-                <span className="text-3xl font-black text-[#561485] tracking-tighter">₹{cart.total.toFixed(2)}</span>
-              </div>
-            </div>
 
-            <button
-              onClick={() => navigate("/customer/dashboard/upi-payment")}
-              className="w-full py-6 bg-gradient-to-r from-[#561485] to-[#3C47BA] text-white rounded-[2rem] font-black uppercase tracking-widest text-sm shadow-2xl shadow-[#561485]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
-            >
-              <CreditCard className="w-5 h-5" />
-              Pay Successfully
-            </button>
+              <div className="pt-4 space-y-4">
+                <div className="flex justify-between items-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                  <span>Items Subtotal</span>
+                  <span className="text-gray-900">₹{cart.subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                  <span>Government Taxes</span>
+                  <span className="text-gray-900">₹{cart.tax.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center pt-6 border-t border-gray-100">
+                  <span className="text-lg font-black text-gray-900 uppercase tracking-tighter">Grand Total</span>
+                  <span className="text-3xl font-black text-[#561485] tracking-tighter">₹{cart.total.toFixed(2)}</span>
+                </div>
+              </div>
 
-            <div className="flex items-center justify-center gap-2 opacity-30">
-              <ShieldCheck className="w-4 h-4" />
-              <span className="text-[8px] font-black uppercase tracking-widest">Encrypted Checkout</span>
+              <button
+                onClick={() => navigate("/customer/dashboard/upi-payment")}
+                className="w-full py-6 bg-gradient-to-r from-[#561485] to-[#3C47BA] text-white rounded-[2rem] font-black uppercase tracking-widest text-sm shadow-2xl shadow-[#561485]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+              >
+                <CreditCard className="w-5 h-5" />
+                Pay Successfully
+              </button>
+
+              <div className="flex items-center justify-center gap-2 opacity-30">
+                <ShieldCheck className="w-4 h-4" />
+                <span className="text-[8px] font-black uppercase tracking-widest">Encrypted Checkout</span>
+              </div>
             </div>
           </div>
 
