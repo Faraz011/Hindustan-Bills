@@ -196,7 +196,7 @@ export const createOrderFromCart = asyncHandler(async (req, res) => {
     select: "_id name price shop stock",
     populate: {
       path: "shop",
-      select: "name",
+      select: "name metadata",
     },
   });
 
