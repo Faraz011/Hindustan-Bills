@@ -18,6 +18,7 @@ import DashboardPage from "./pages/retailer/dashboard/pages/Dashboard";
 import ProductsPage from "./pages/retailer/dashboard/pages/products";
 import OrdersPage from "./pages/retailer/dashboard/pages/Orders";
 import ShopDetailsPage from "./pages/retailer/dashboard/pages/ShopDetails";
+import SettingsPage from "./pages/retailer/dashboard/pages/Settings";
 import CustomerDashboardPage from "./pages/customer/dashboard/pages/Dashboard";
 import CustomerOrdersPage from "./pages/customer/dashboard/pages/Orders";
 import ShoppingPage from "./pages/customer/dashboard/pages/Shopping";
@@ -81,6 +82,7 @@ function App() {
             <Route path="products" element={<ProductsPage />} />
             <Route path="orders" element={<OrdersPage />} />
             <Route path="shop" element={<ShopDetailsPage />} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
 
           {/* Customer Dashboard Routes */}

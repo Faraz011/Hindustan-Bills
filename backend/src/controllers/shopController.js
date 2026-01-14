@@ -171,3 +171,47 @@ export const getAvailableShops = asyncHandler(async (req, res) => {
     count: validShops.length,
   });
 });
+
+// @desc    Get shop settings (for Telegram, etc.)
+// @route   GET /api/shop/settings
+// @access  Private (retailer)
+export const getShopSettings = asyncHandler(async (req, res) => {
+  const shop = await Shop.findOne({ owner: req.user.id }).select('metadata').lean();
+  
+  if (!shop) {
+    return res.status(404).json({ message: "Shop not found" });
+  }
+
+  res.json({
+    metadata: shop.metadata || {}
+  });
+});
+
+// @desc    Update shop settings (Telegram Chat ID, etc.)
+// @route   PUT /api/shop/settings
+// @access  Private (retailer)
+export const updateShopSettings = asyncHandler(async (req, res) => {
+  const { telegramChatId } = req.body;
+  
+  const shop = await Shop.findOne({ owner: req.user.id });
+  
+  if (!shop) {
+    return res.status(404).json({ message: "Shop not found" });
+  }
+
+  // Update metadata
+  if (!shop.metadata) {
+    shop.metadata = {};
+  }
+  
+  if (telegramChatId !== undefined) {
+    shop.metadata.telegramChatId = telegramChatId;
+  }
+
+  await shop.save();
+  
+  res.json({
+    message: "Settings updated successfully",
+    metadata: shop.metadata
+  });
+});

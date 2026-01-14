@@ -66,6 +66,7 @@ const shopSchema = new mongoose.Schema(
       gstNumber: { type: String, trim: true },
       fssaiLicense: { type: String, trim: true },
       upiId: { type: String, trim: true },
+      telegramChatId: { type: String, trim: true },
     },
   },
   {

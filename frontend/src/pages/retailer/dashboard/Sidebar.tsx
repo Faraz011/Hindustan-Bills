@@ -6,6 +6,7 @@ import {
   Store,
   Package,
   ClipboardList,
+  Settings,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -20,6 +21,7 @@ const Sidebar = ({ onClose }: SidebarProps) => {
     { name: "Shop Details", path: "/retailer/dashboard/shop", icon: Store },
     { name: "Products", path: "/retailer/dashboard/products", icon: Package },
     { name: "Orders", path: "/retailer/dashboard/orders", icon: ClipboardList },
+    { name: "Settings", path: "/retailer/dashboard/settings", icon: Settings },
   ];
 
   return (

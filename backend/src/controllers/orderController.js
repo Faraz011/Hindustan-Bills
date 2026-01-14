@@ -150,13 +150,11 @@ export const createOrder = asyncHandler(async (req, res) => {
   res.status(201).json(createdOrder);
 });
 
-// @desc    Update order status
-// @route   PUT /api/orders/:id/status
-// @access  Private
+
 export const updateOrderStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
 
-  // Find the shop owned by this user (for retailers)
+  // Find the shop owned by this user 
   let shopFilter = {};
   if (req.user.role === 'retailer') {
     const Shop = await import("../models/Shop.js").then(m => m.default);
@@ -167,7 +165,7 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     }
     shopFilter = { shop: shop._id };
   } else {
-    // For customers, use the shop field from user if available
+ 
     shopFilter = req.user.shop ? { shop: req.user.shop } : {};
   }
 
@@ -213,6 +211,11 @@ export const createOrderFromCart = asyncHandler(async (req, res) => {
     throw new Error("Valid UPI ID is required");
   }
 
+  // Validate cart has items and shop reference
+  if (!cart.items[0]?.product?.shop) {
+    res.status(400);
+    throw new Error("Invalid cart data - missing shop reference");
+  }
 
   const shopId = cart.items[0].product.shop._id;
 
@@ -282,9 +285,26 @@ export const createOrderFromCart = asyncHandler(async (req, res) => {
   
   await createdOrder.populate([
     { path: "customer", select: "name email" },
-    { path: "shop", select: "name" },
+    { path: "shop", select: "name metadata.telegramChatId" },
     { path: "items.product", select: "name price" },
   ]);
+
+  // Send Telegram notification to retailer
+  try {
+    const { sendOrderNotification } = await import("../services/telegramService.js");
+    if (createdOrder.shop?.metadata?.telegramChatId) {
+      await sendOrderNotification(createdOrder.shop.metadata.telegramChatId, {
+        orderNumber: createdOrder.orderNumber,
+        tableNumber: createdOrder.tableNumber,
+        items: createdOrder.items,
+        total: createdOrder.total,
+        customerName: createdOrder.customer?.name || 'Guest'
+      });
+    }
+  } catch (error) {
+    console.error('Failed to send Telegram notification:', error.message);
+    // Don't fail the order if notification fails
+  }
 
   res.status(201).json({
     order: createdOrder,

@@ -6,6 +6,8 @@ import {
   getProducts,
   getOrders,
   getAvailableShops,
+  getShopSettings,
+  updateShopSettings,
 } from "../controllers/shopController.js";
 
 const router = express.Router();
@@ -15,6 +17,12 @@ router
   .route("/details")
   .get(protect, getShopDetails)
   .put(protect, updateShopDetails);
+
+// Settings routes
+router
+  .route("/settings")
+  .get(protect, getShopSettings)
+  .put(protect, updateShopSettings);
 
 // Product routes
 router.get("/products", protect, getProducts);
