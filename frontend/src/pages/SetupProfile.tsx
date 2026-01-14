@@ -136,9 +136,6 @@ const SetupProfile = () => {
       >
         <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-[#561485]/10 p-8 md:p-12 border border-white">
           <div className="text-center mb-10">
-            <div className="w-20 h-20 bg-gradient-to-br from-[#561485] to-[#3C47BA] rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-[#561485]/20 transform rotate-3">
-              <span className="text-white font-black text-3xl">HB</span>
-            </div>
             <h2 className="text-4xl font-black text-gray-900 tracking-tighter uppercase leading-none">
               Welcome, <br />
               <span className="text-[#561485]">{userInfo.name.split(' ')[0]}!</span>
