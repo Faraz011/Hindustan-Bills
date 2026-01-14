@@ -20,6 +20,7 @@ const MenuPage = () => {
   const [loading, setLoading] = useState(true);
   const [cartQuantities, setCartQuantities] = useState<{ [key: string]: number }>({});
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
   const [dbCart, setDbCart] = useState<any>(null);
   const navigate = useNavigate();
 
@@ -59,11 +60,20 @@ const MenuPage = () => {
     }
   };
 
-  const filteredProducts = useMemo(() => {
-    return products.filter((p) =>
-      p.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const categories = useMemo(() => {
+    const uniqueCategories = Array.from(
+      new Set(products.map((p) => p.category || "Uncategorized"))
     );
-  }, [products, searchQuery]);
+    return ["All", ...uniqueCategories.sort()];
+  }, [products]);
+
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) => {
+      const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === "All" || p.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, searchQuery, selectedCategory]);
 
   const handleAddToCart = async (productId: string) => {
     try {
@@ -179,11 +189,31 @@ const MenuPage = () => {
         </div>
       </div>
 
+      {/* Category Filter */}
+      <div className="sticky top-[88px] z-30 bg-white/90 backdrop-blur-xl border-b border-gray-50 px-6 py-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+            {categories.map((category) => (
+              <motion.button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                whileTap={{ scale: 0.95 }}
+                className={`px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${
+                  selectedCategory === category
+                    ? "bg-gray-900 text-white shadow-xl shadow-black/10"
+                    : "bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-900"
+                }`}
+              >
+                {category}
+              </motion.button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Menu Sections */}
       <div className="max-w-4xl mx-auto px-6 mt-12 space-y-16">
         <header className="flex items-center gap-4">
-          <div className="flex-1 h-px bg-gray-50"></div>
-          <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Signature Selection</h2>
           <div className="flex-1 h-px bg-gray-50"></div>
         </header>
 
@@ -198,10 +228,10 @@ const MenuPage = () => {
             >
               <div className="flex-1 space-y-4 order-2 md:order-1">
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-emerald-500 p-0.5 rounded flex items-center justify-center">
-                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
+                  <div className="w-4 h-4 border-2 border-[#561485] p-0.5 rounded flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 bg-[#561485] rounded-full"></div>
                   </div>
-                  <span className="text-[9px] font-black text-[#A13266] uppercase tracking-widest">{product.category || "Main Course"}</span>
+                  <span className="text-[9px] font-black text-[#561485] uppercase tracking-widest">{product.category || "Main Course"}</span>
                 </div>
                 <div>
                   <h3 className="text-2xl font-black text-gray-900 tracking-tighter group-hover:text-[#561485] transition-colors uppercase leading-none mb-2">
@@ -273,7 +303,7 @@ const MenuPage = () => {
         </div>
       </div>
 
-      {/* Floating Modern Cart Summary */}
+      {/* Cart Summary */}
       <AnimatePresence>
         {dbCart && dbCart.items && dbCart.items.length > 0 && (
           <motion.div
