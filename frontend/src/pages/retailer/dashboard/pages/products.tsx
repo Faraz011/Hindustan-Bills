@@ -101,7 +101,6 @@ export default function Products() {
       if (shopDetails?.businessType !== "restaurant") {
         delete (filteredData as any).dietaryInfo;
         delete (filteredData as any).preparationTime;
-        delete (filteredData as any).isAvailable;
       }
 
       // Handle empty barcode and sku
@@ -170,6 +169,7 @@ export default function Products() {
       description: "",
       stock: 0,
       image: "",
+      isAvailable: true,
     });
     setIsModalOpen(true);
   };
@@ -178,6 +178,20 @@ export default function Products() {
     setIsModalOpen(false);
     setEditingProduct(null);
     reset();
+  };
+
+  const toggleAvailability = async (productId: string, currentStatus: boolean) => {
+    try {
+      await updateProduct(productId, { isAvailable: !currentStatus });
+      setProducts((prev) =>
+        prev.map((p) =>
+          p._id === productId ? { ...p, isAvailable: !currentStatus } : p
+        )
+      );
+      toast.success(`Product ${!currentStatus ? 'available' : 'unavailable'}`);
+    } catch (error) {
+      toast.error("Failed to update availability");
+    }
   };
 
   const updateStock = async (productId: string, change: number) => {
@@ -303,6 +317,22 @@ export default function Products() {
                     <p className="text-lg font-black text-[#561485] tracking-tighter mt-1">₹{product.price.toFixed(0)}</p>
                   </div>
 
+                  <div className="flex items-center justify-between rounded-2xl border border-transparent hover:border-[#561485]/10 transition-all">
+                    <div>
+                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Availability</p>
+                      <p className="text-[10px] font-bold text-gray-900 uppercase">{product.isAvailable !== false ? 'Available' : 'Unavailable'}</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer scale-75 origin-right">
+                      <input 
+                        type="checkbox" 
+                        checked={product.isAvailable !== false}
+                        onChange={() => toggleAvailability(product._id!, product.isAvailable !== false)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#561485]"></div>
+                    </label>
+                  </div>
+
                   {shopDetails?.businessType === 'restaurant' ? (
                     <div className="flex flex-wrap gap-2">
                       {product.dietaryInfo?.map(diet => (
@@ -319,7 +349,7 @@ export default function Products() {
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between pt-6 border-t border-gray-50">
+                  <div className="flex items-center justify-between border-t border-gray-50">
                     <div>
                       <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Stock Level</p>
                       <span className={`text-xs font-black uppercase transition-colors ${
@@ -452,6 +482,21 @@ export default function Products() {
                       placeholder="https://images..."
                       className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:bg-white focus:border-[#561485]/20 focus:outline-none transition-all"
                     />
+                  </div>
+
+                  <div className="md:col-span-2 flex items-center justify-between p-6 bg-gray-50 rounded-2xl border border-transparent hover:border-[#561485]/10 transition-all">
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Availability Status</p>
+                      <p className="text-xs font-bold text-gray-900">Show this product to customers</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        {...register("isAvailable")} 
+                        className="sr-only peer"
+                      />
+                      <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#561485]"></div>
+                    </label>
                   </div>
                 </div>
 

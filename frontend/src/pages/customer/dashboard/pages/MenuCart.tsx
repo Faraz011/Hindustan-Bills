@@ -8,7 +8,6 @@ import {
   ArrowLeft, 
   Receipt, 
   CreditCard, 
-  ChevronRight,
   ShieldCheck,
   LayoutGrid
 } from "lucide-react";
@@ -138,7 +137,7 @@ export default function MenuCartPage() {
             Back to Menu
           </button>
           <div className="space-y-1">
-            <h1 className="text-5xl font-black text-gray-900 tracking-tighter uppercase leading-none">Your Bag</h1>
+            <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tighter uppercase leading-none">Your Bag</h1>
             <p className="text-[10px] font-black text-[#A13266] uppercase tracking-[0.2em] leading-none">
               {cart.items.length} Items • {cart.items[0]?.shop?.name || "Apni Rasoi"}
             </p>
@@ -159,7 +158,7 @@ export default function MenuCartPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ delay: i * 0.05 }}
-                className="group relative bg-white rounded-[2.5rem] border border-gray-50 p-6 md:p-8 hover:shadow-2xl hover:shadow-[#561485]/5 transition-all flex flex-col md:flex-row items-center gap-8"
+                className="group relative bg-white rounded-[2.5rem] border border-gray-50 p-6 md:p-8 hover:shadow-2xl hover:shadow-[#561485]/5 transition-all flex flex-col md:flex-row items-center gap-6 md:gap-8"
               >
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-[2rem] overflow-hidden bg-gray-50 shadow-inner flex-shrink-0">
                   <img
@@ -211,7 +210,7 @@ export default function MenuCartPage() {
 
         {/* Total Summary Card */}
         <aside className="space-y-8">
-          <div className="bg-white rounded-[3rem] border border-gray-50 p-10 shadow-xl shadow-[#561485]/5 space-y-8">
+          <div className="bg-white rounded-[2.5rem] md:rounded-[3rem] border border-gray-50 p-6 md:p-10 shadow-xl shadow-[#561485]/5 space-y-8">
             <div className="flex items-center gap-3">
               <Receipt className="w-5 h-5 text-[#561485]" />
               <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Bill Summary</h3>

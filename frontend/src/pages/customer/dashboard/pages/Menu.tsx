@@ -133,7 +133,7 @@ const MenuPage = () => {
   const selectedShop = JSON.parse(localStorage.getItem("selectedShop") || "{}");
 
   return (
-    <div className="min-h-screen bg-white pb-32">
+    <div className="min-h-screen bg-white pb-32 overflow-x-hidden relative">
       {/* Premium Hero Banner */}
       <section className="relative h-72 md:h-[400px] w-full overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10"></div>
@@ -145,11 +145,11 @@ const MenuPage = () => {
           alt="Banner"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-x-0 bottom-0 p-8 md:p-16 z-20">
+        <div className="absolute inset-x-0 bottom-0 p-4 md:p-16 z-20">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-6xl mx-auto space-y-4"
+            className="max-w-6xl mx-auto space-y-2 md:space-y-4"
           >
             <button 
               onClick={() => navigate("/customer/dashboard/select-shop")}
@@ -158,7 +158,7 @@ const MenuPage = () => {
               <ArrowLeft className="w-3 h-3" />
               Change Outlet
             </button>
-            <h1 className="text-4xl md:text-7xl font-black text-white tracking-tighter uppercase leading-none">
+            <h1 className="text-3xl md:text-7xl font-black text-white tracking-tighter uppercase leading-none break-words max-w-full">
               {selectedShop.name || "The Kitchen"}
             </h1>
             <div className="flex flex-wrap items-center gap-6 text-[10px] font-black uppercase tracking-widest text-white/80">
@@ -176,7 +176,7 @@ const MenuPage = () => {
       </section>
 
       {/* Sticky Search & Discovery */}
-      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-3xl border-b border-gray-50 p-6">
+      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-3xl border-b border-gray-50 p-4 md:p-6">
         <div className="max-w-4xl mx-auto relative group">
           <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300 w-5 h-5 group-focus-within:text-[#561485] transition-colors" />
           <input
@@ -184,13 +184,13 @@ const MenuPage = () => {
             placeholder="Craving something specific?"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-16 pr-8 py-5 bg-gray-50 border-2 border-transparent rounded-[2rem] focus:border-[#561485]/10 focus:bg-white transition-all text-sm font-bold tracking-tight outline-none"
+            className="w-full pl-12 md:pl-16 pr-6 md:pr-8 py-4 md:py-5 bg-gray-50 border-2 border-transparent rounded-[1.5rem] md:rounded-[2rem] focus:border-[#561485]/10 focus:bg-white transition-all text-xs md:text-sm font-bold tracking-tight outline-none"
           />
         </div>
       </div>
 
       {/* Category Filter */}
-      <div className="sticky top-[88px] z-30 bg-white/90 backdrop-blur-xl border-b border-gray-50 px-6 py-4">
+      <div className="sticky top-[88px] z-30 bg-white/90 backdrop-blur-xl border-b border-gray-50 px-4 md:px-6 py-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
             {categories.map((category) => (
@@ -212,7 +212,7 @@ const MenuPage = () => {
       </div>
 
       {/* Menu Sections */}
-      <div className="max-w-4xl mx-auto px-6 mt-12 space-y-16">
+      <div className="max-w-4xl mx-auto px-2 md:px-6 mt-8 md:mt-12 space-y-12 md:space-y-16">
         <header className="flex items-center gap-4">
           <div className="flex-1 h-px bg-gray-50"></div>
         </header>
@@ -224,7 +224,7 @@ const MenuPage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="flex flex-col md:flex-row gap-8 items-start group"
+              className="flex flex-col md:flex-row gap-6 md:gap-8 items-center md:items-start group w-full max-w-full overflow-hidden"
             >
               <div className="flex-1 space-y-4 order-2 md:order-1">
                 <div className="flex items-center gap-2">
@@ -234,34 +234,34 @@ const MenuPage = () => {
                   <span className="text-[9px] font-black text-[#561485] uppercase tracking-widest">{product.category || "Main Course"}</span>
                 </div>
                 <div>
-                  <h3 className="text-2xl font-black text-gray-900 tracking-tighter group-hover:text-[#561485] transition-colors uppercase leading-none mb-2">
+                  <h3 className="text-xl md:text-2xl font-black text-gray-900 tracking-tighter group-hover:text-[#561485] transition-colors uppercase leading-none mb-2 break-words">
                     {product.name}
                   </h3>
-                  <p className="text-sm font-bold text-gray-400 leading-relaxed line-clamp-2">
+                  <p className="text-xs md:text-sm font-bold text-gray-400 leading-relaxed line-clamp-2">
                     {product.description || "A masterfully prepared dish using the finest seasonal ingredients and traditional techniques."}
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
                   <span className="text-xl font-black text-gray-900 tracking-tighter">₹{product.price}</span>
                   {product.stock && product.stock < 10 && product.stock > 0 && (
-                    <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest bg-rose-50 px-2 py-1 rounded">
+                    <span className="text-[8px] md:text-[9px] font-black text-rose-500 uppercase tracking-widest bg-rose-50 px-2 py-1 rounded">
                       Only {product.stock} left
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="relative order-1 md:order-2 w-full md:w-auto">
-                <div className="w-full h-48 md:w-44 md:h-44 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-gray-200 group-hover:shadow-[#561485]/10 transition-all duration-500">
+              <div className="relative order-1 md:order-2 w-full md:w-auto flex-shrink-0">
+                <div className="w-full h-48 md:w-44 md:h-44 max-w-full rounded-[2.5rem] overflow-hidden shadow-2xl shadow-gray-200 group-hover:shadow-[#561485]/10 transition-all duration-500">
                   <img
                     src={product.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=400"}
                     alt={product.name}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
-                  {!(product.stock && product.stock > 0) && (
-                    <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center">
+                  {(!(product.stock && product.stock > 0) || product.isAvailable === false) && (
+                    <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 text-center">
                       <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest border-2 border-gray-900 px-3 py-1 rounded-full">
-                        Out of Stock
+                        {product.isAvailable === false ? "Not Available Now" : "Out of Stock"}
                       </span>
                     </div>
                   )}
@@ -288,11 +288,11 @@ const MenuPage = () => {
                       </div>
                     ) : (
                       <button
-                        disabled={!(product.stock && product.stock > 0)}
+                        disabled={!(product.stock && product.stock > 0) || product.isAvailable === false}
                         onClick={() => handleAddToCart(product._id!)}
                         className="w-full py-3 text-xs font-black text-[#561485] uppercase tracking-widest hover:bg-[#561485] hover:text-white transition-all disabled:opacity-20 active:scale-95"
                       >
-                        Add
+                        {product.isAvailable === false ? "Unavailable" : "Add"}
                       </button>
                     )}
                   </div>

@@ -84,6 +84,7 @@ export interface Product {
   stock?: number;
   image?: string;
   shopId?: string;
+  isAvailable?: boolean;
 }
 
 export interface Order {

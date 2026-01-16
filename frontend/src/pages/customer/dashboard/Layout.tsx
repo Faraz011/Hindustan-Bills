@@ -40,21 +40,16 @@ export default function Layout() {
         )}
       </AnimatePresence>
 
-      {/* Main content - Dynamic Margin */}
-      <motion.div 
-        initial={false}
-        animate={{ 
-          paddingLeft: typeof window !== 'undefined' && window.innerWidth >= 768 ? (sidebarOpen ? 288 : 0) : 0 
-        }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="flex-1 flex flex-col min-w-0 min-h-screen"
+      {/* Main content */}
+      <div 
+        className={`flex-1 flex flex-col min-w-0 min-h-screen transition-all duration-300 ${sidebarOpen ? 'md:pl-72' : 'pl-0'}`}
       >
         <DashboardNavbar
           onToggleSidebar={toggleSidebar}
           sidebarOpen={sidebarOpen}
         />
         <main className="flex-1 overflow-y-auto bg-[#F8F9FA]">
-          <div className="mx-auto max-w-7xl px-4 sm:px-8 py-8">
+          <div className="mx-auto max-w-7xl px-2 sm:px-8 py-8">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -64,7 +59,7 @@ export default function Layout() {
             </motion.div>
           </div>
         </main>
-      </motion.div>
+      </div>
     </div>
   );
 }
