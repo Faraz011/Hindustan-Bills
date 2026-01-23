@@ -213,8 +213,8 @@ export default function Products() {
   };
 
   const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.category?.toLowerCase().includes(searchQuery.toLowerCase())
+    String(p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    String(p.category || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (isLoading) {
@@ -342,10 +342,22 @@ export default function Products() {
                       ))}
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-[9px] font-bold text-gray-400 uppercase tracking-widest">
-                        <Barcode className="w-3 h-3" /> SKU: {product.sku || 'N/A'}
-                      </div>
+                    <div className="space-y-1">
+                      {product.sku && (
+                        <div className="flex items-center gap-2 text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                          <Barcode className="w-3 h-3" /> SKU: {product.sku}
+                        </div>
+                      )}
+                      {product.barcode && (
+                        <div className="flex items-center gap-2 text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                          <Barcode className="w-3 h-3" /> Barcode: {product.barcode}
+                        </div>
+                      )}
+                      {!product.sku && !product.barcode && (
+                        <div className="flex items-center gap-2 text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                          <Barcode className="w-3 h-3" /> N/A
+                        </div>
+                      )}
                     </div>
                   )}
 

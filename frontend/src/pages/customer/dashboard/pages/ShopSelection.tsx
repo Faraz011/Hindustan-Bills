@@ -19,8 +19,8 @@ export default function ShopSelection() {
 
   useEffect(() => {
     const filtered = shops.filter(shop => 
-      shop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      shop.businessType.toLowerCase().includes(searchQuery.toLowerCase())
+      String(shop.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      String(shop.businessType || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
     setFilteredShops(filtered);
   }, [searchQuery, shops]);

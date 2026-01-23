@@ -56,9 +56,9 @@ export default function Orders() {
   }, []);
 
   const filteredOrders = orders.filter(order => 
-    order._id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    order.customer?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    order.orderNumber?.toLowerCase().includes(searchQuery.toLowerCase())
+    String(order._id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    String(order.customer?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    String(order.orderNumber || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (isLoading) {
