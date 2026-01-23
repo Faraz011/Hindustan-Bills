@@ -37,6 +37,12 @@ const productSchema = new mongoose.Schema(
         "beverages",
         "dosa",
         "uttapam",
+        "burger",
+        "snaks",
+        "pasta",
+        "indian",
+        "chinese",
+        "desserts",
         "roll/paratha",
         "chinese_soup",
         "noodles",
@@ -73,6 +79,17 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    sku: {
+      type: mongoose.Schema.Types.Mixed,
+    },
+    barcode: {
+      type: mongoose.Schema.Types.Mixed,
+      sparse: true,
+      unique: true,
+    },
+    "item code": {
+      type: mongoose.Schema.Types.Mixed,
+    },
     metadata: {
       sku: String,
       barcode: {
@@ -104,7 +121,7 @@ const productSchema = new mongoose.Schema(
       },
     ],
     preparationTime: {
-      type: Number, // in minutes
+      type: Number, 
       min: 0,
     },
     isAvailable: {
@@ -125,13 +142,11 @@ productSchema.index({ shop: 1, isActive: 1 });
 
 // Pre-save hook to handle empty strings for unique/sparse fields
 productSchema.pre("save", function (next) {
-  if (this.metadata) {
-    if (this.metadata.barcode === "") {
-      this.metadata.barcode = undefined;
-    }
-    if (this.metadata.sku === "") {
-      this.metadata.sku = undefined;
-    }
+  if (this.barcode === "") {
+    this.barcode = undefined;
+  }
+  if (this.sku === "") {
+    this.sku = undefined;
   }
   next();
 });

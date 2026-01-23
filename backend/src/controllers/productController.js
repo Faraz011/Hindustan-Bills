@@ -66,10 +66,8 @@ export const createProduct = asyncHandler(async (req, res) => {
     stock: stock || 0,
     image: image || "/placeholder-product.png",
     shop: shop._id,
-    metadata: {
-      barcode: barcode && barcode.trim() !== "" ? barcode.trim() : undefined,
-      sku: sku && sku.trim() !== "" ? sku.trim() : undefined,
-    },
+    barcode: barcode && barcode.trim() !== "" ? barcode.trim() : undefined,
+    sku: sku && sku.trim() !== "" ? sku.trim() : undefined,
     dietaryInfo,
     preparationTime,
     isAvailable: isAvailable !== undefined ? isAvailable : true,
@@ -124,15 +122,9 @@ export const updateProduct = asyncHandler(async (req, res) => {
   if (preparationTime !== undefined) product.preparationTime = preparationTime;
   if (isAvailable !== undefined) product.isAvailable = isAvailable;
 
-  // Update metadata
-  const newBarcode = barcode !== undefined ? (barcode.trim() !== "" ? barcode.trim() : undefined) : product.metadata?.barcode;
-  const newSku = sku !== undefined ? (sku.trim() !== "" ? sku.trim() : undefined) : product.metadata?.sku;
-
-  product.metadata = {
-    ...product.metadata,
-    barcode: newBarcode,
-    sku: newSku,
-  };
+  // Update identification fields
+  if (barcode !== undefined) product.barcode = barcode.trim() !== "" ? barcode.trim() : undefined;
+  if (sku !== undefined) product.sku = sku.trim() !== "" ? sku.trim() : undefined;
 
   const updatedProduct = await product.save();
   res.json(updatedProduct);

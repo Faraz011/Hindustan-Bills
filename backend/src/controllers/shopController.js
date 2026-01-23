@@ -187,11 +187,11 @@ export const getShopSettings = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Update shop settings (Telegram Chat ID, etc.)
+// @desc    Update shop settings (Telegram Chat ID, upiId, etc.)
 // @route   PUT /api/shop/settings
 // @access  Private (retailer)
 export const updateShopSettings = asyncHandler(async (req, res) => {
-  const { telegramChatId } = req.body;
+  const { telegramChatId, upiId } = req.body;
   
   const shop = await Shop.findOne({ owner: req.user.id });
   
@@ -206,6 +206,10 @@ export const updateShopSettings = asyncHandler(async (req, res) => {
   
   if (telegramChatId !== undefined) {
     shop.metadata.telegramChatId = telegramChatId;
+  }
+
+  if (upiId !== undefined) {
+    shop.metadata.upiId = upiId;
   }
 
   await shop.save();
