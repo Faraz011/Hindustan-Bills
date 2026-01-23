@@ -16,18 +16,39 @@ export const scanProduct = asyncHandler(async (req, res) => {
       .json({ message: "Barcode, session code, and shop ID are required" });
   }
 
-  console.log(
-    `🔍 Scanning barcode: ${barcode} for session: ${sessionCode} in shop: ${shopId}`
-  );
+  const barcodeTrimmed = String(barcode).trim();
+  const barcodeAsNum = Number(barcodeTrimmed);
+
+  const barcodeQuery = [
+    { barcode: barcodeTrimmed },
+    { "metadata.barcode": barcodeTrimmed },
+    { "item code": barcodeTrimmed },
+  ];
+
+  if (!isNaN(barcodeAsNum)) {
+    barcodeQuery.push({ barcode: barcodeAsNum });
+    barcodeQuery.push({ "metadata.barcode": barcodeAsNum });
+    barcodeQuery.push({ "item code": barcodeAsNum });
+  }
 
   // Look up product in database - now filtered by shop
   const product = await Product.findOne({
-    "metadata.barcode": barcode.trim(),
-    shop: shopId,
-    isActive: true,
+    $and: [
+      { $or: barcodeQuery },
+      { shop: shopId },
+      {
+        $or: [
+          { isActive: true },
+          { isActive: { $exists: false } },
+          { Status: "Continue" },
+          { isAvailable: true },
+          { is_available: true }
+        ]
+      }
+    ]
   })
     .select(
-      "_id metadata.barcode metadata.sku name category price stock taxRate image description shop"
+      "_id barcode sku metadata.barcode metadata.sku \"item code\" name category price stock taxRate image description shop is_available isAvailable"
     )
     .populate("shop", "name")
     .lean();
@@ -54,11 +75,11 @@ export const scanProduct = asyncHandler(async (req, res) => {
     sessionCode,
     user: userId,
     product: product._id,
-    isActive: true,
   });
 
   if (scannedProduct) {
-    // Update quantity
+    // Re-activate and update quantity
+    scannedProduct.isActive = true;
     scannedProduct.quantity += quantity;
     await scannedProduct.save();
   } else {
@@ -85,8 +106,8 @@ export const scanProduct = asyncHandler(async (req, res) => {
       sessionCode: scannedProduct.sessionCode,
       product: {
         _id: product._id,
-        barcode: product.metadata.barcode,
-        sku: product.metadata.sku,
+        barcode: product.barcode || product.metadata?.barcode,
+        sku: product.sku || product.metadata?.sku,
         name: product.name,
         category: product.category,
         price: product.price,
@@ -121,8 +142,8 @@ export const getSessionProducts = asyncHandler(async (req, res) => {
     sessionCode: item.sessionCode,
     product: {
       _id: item.product._id,
-      barcode: item.product.barcode,
-      sku: item.product.sku,
+      barcode: item.product.barcode || item.product.metadata?.barcode,
+      sku: item.product.sku || item.product.metadata?.sku,
       name: item.product.name,
       category: item.product.category,
       price: item.product.price,
@@ -238,24 +259,51 @@ export const scanProductByBarcode = asyncHandler(async (req, res) => {
   const { shopId } = req.query;
 
   // Validate barcode format
-  if (!barcode || barcode.trim().length === 0) {
+  if (!barcode || String(barcode).trim().length === 0) {
     return res.status(400).json({ message: "Invalid barcode format" });
   }
 
-  console.log(
-    `🔍 Scanning barcode: ${barcode}${shopId ? ` in shop: ${shopId}` : ""}`
-  );
+  const barcodeTrimmed = String(barcode).trim();
+  const barcodeAsNum = Number(barcodeTrimmed);
+
+  const barcodeQuery = [
+    { barcode: barcodeTrimmed },
+    { "metadata.barcode": barcodeTrimmed },
+    { "item code": barcodeTrimmed }
+  ];
+
+  if (!isNaN(barcodeAsNum)) {
+    barcodeQuery.push({ barcode: barcodeAsNum });
+    barcodeQuery.push({ "metadata.barcode": barcodeAsNum });
+    barcodeQuery.push({ "item code": barcodeAsNum });
+  }
 
   // Build query - filter by shop if provided
-  const query = { "metadata.barcode": barcode.trim(), isActive: true };
+  const queryAnd = [
+    { $or: barcodeQuery }
+  ];
+
   if (shopId) {
-    query.shop = shopId;
+    queryAnd.push({ shop: shopId });
   }
+
+  // Status/Availability filter - being extra lenient
+  queryAnd.push({
+    $or: [
+      { isActive: true },
+      { isActive: { $exists: false } },
+      { Status: "Continue" },
+      { isAvailable: true },
+      { is_available: true }
+    ]
+  });
+
+  const query = { $and: queryAnd };
 
   // Look up product in database
   const product = await Product.findOne(query)
     .select(
-      "_id metadata.barcode metadata.sku name category price stock taxRate image shop"
+      "_id barcode sku metadata.barcode metadata.sku \"item code\" name category price stock taxRate image shop is_available isAvailable"
     )
     .populate("shop", "name")
     .lean(); // Use .lean() for faster read-only queries
@@ -284,8 +332,8 @@ export const scanProductByBarcode = asyncHandler(async (req, res) => {
 
   res.json({
     _id: product._id,
-    barcode: product.metadata.barcode,
-    sku: product.metadata.sku,
+    barcode: product.barcode || product.metadata?.barcode,
+    sku: product.sku || product.metadata?.sku,
     name: product.name,
     category: product.category,
     price: product.price,
@@ -314,14 +362,17 @@ export const addProductById = asyncHandler(async (req, res) => {
     `🔍 Adding product by ID: ${productId} for session: ${sessionCode} in shop: ${shopId}`
   );
 
-  // Look up product in database - now filtered by shop
   const product = await Product.findOne({
     _id: productId,
     shop: shopId,
-    isActive: true,
+    $or: [
+      { isActive: true },
+      { isActive: { $exists: false } },
+      { Status: "Continue" }
+    ]
   })
     .select(
-      "_id metadata.barcode metadata.sku name category price stock taxRate image description shop"
+      "_id barcode sku metadata.barcode metadata.sku \"item code\" name category price stock taxRate image description shop is_available isAvailable"
     )
     .populate("shop", "name")
     .lean();
@@ -348,11 +399,11 @@ export const addProductById = asyncHandler(async (req, res) => {
     sessionCode,
     user: userId,
     product: product._id,
-    isActive: true,
   });
 
   if (scannedProduct) {
-    // Update quantity
+    // Re-activate and update quantity
+    scannedProduct.isActive = true;
     scannedProduct.quantity += quantity;
     await scannedProduct.save();
   } else {
@@ -379,8 +430,8 @@ export const addProductById = asyncHandler(async (req, res) => {
       sessionCode: scannedProduct.sessionCode,
       product: {
         _id: product._id,
-        barcode: product.metadata.barcode,
-        sku: product.metadata.sku,
+        barcode: product.barcode || product.metadata?.barcode,
+        sku: product.sku || product.metadata?.sku,
         name: product.name,
         category: product.category,
         price: product.price,
@@ -411,7 +462,10 @@ export const searchProducts = asyncHandler(async (req, res) => {
     $or: [
       { name: { $regex: q, $options: "i" } },
       { barcode: { $regex: q, $options: "i" } },
+      { "metadata.barcode": { $regex: q, $options: "i" } },
+      { "item code": { $regex: q, $options: "i" } },
       { sku: { $regex: q, $options: "i" } },
+      { "metadata.sku": { $regex: q, $options: "i" } },
     ],
   })
     .limit(10)

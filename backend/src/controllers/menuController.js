@@ -27,7 +27,7 @@ export const addToCart = asyncHandler(async (req, res) => {
     isActive: true,
   })
     .select(
-      "_id metadata.barcode metadata.sku name category price stock taxRate image description shop"
+      "_id barcode sku name category price stock taxRate image description shop"
     )
     .populate("shop", "name")
     .lean();

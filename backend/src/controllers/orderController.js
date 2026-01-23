@@ -211,6 +211,12 @@ export const createOrderFromCart = asyncHandler(async (req, res) => {
     throw new Error("Valid UPI ID is required");
   }
 
+  // Debug logging
+  console.log('Cart items:', cart.items.length);
+  console.log('First item:', cart.items[0]);
+  console.log('First product:', cart.items[0]?.product);
+  console.log('Shop reference:', cart.items[0]?.product?.shop);
+
   // Validate cart has items and shop reference
   if (!cart.items[0]?.product?.shop) {
     res.status(400);
