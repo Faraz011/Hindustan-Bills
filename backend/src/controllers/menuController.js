@@ -105,14 +105,22 @@ export const getCart = asyncHandler(async (req, res) => {
     });
   }
 
-
   let subtotal = 0;
-  let tax = 0; 
+  let tax = 0;
 
-  const items = cart.items.map((item) => {
+
+  const validItems = cart.items.filter((item) => item.product != null);
+  
+  // Optional: Clean up the cart in background if null products found
+  if (validItems.length !== cart.items.length) {
+    cart.items = validItems;
+    cart.save().catch(err => console.error("Error cleaning up cart:", err));
+  }
+
+  const items = validItems.map((item) => {
     const product = item.product;
-    const itemSubtotal = product.price * item.quantity;
-    const itemTax = 0; 
+    const itemSubtotal = (product.price || 0) * item.quantity;
+    const itemTax = 0; // Tax calculation can be added here
 
     subtotal += itemSubtotal;
     tax += itemTax;
@@ -129,8 +137,9 @@ export const getCart = asyncHandler(async (req, res) => {
     };
   });
 
-  const total = subtotal; 
-  const shop = cart.items[0]?.product?.shop;
+  const total = subtotal;
+  const firstProduct = validItems[0]?.product;
+  const shop = firstProduct?.shop;
   const upiId = shop?.metadata?.upiId;
   const shopName = shop?.name;
 
