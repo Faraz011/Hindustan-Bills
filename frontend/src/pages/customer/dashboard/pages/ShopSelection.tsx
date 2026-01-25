@@ -136,7 +136,9 @@ export default function ShopSelection() {
                   {/* Selection Indicator */}
                   {selectedShop?._id === shop._id && (
                     <div className="absolute top-6 right-6 z-10 w-10 h-10 bg-[#561485] rounded-xl flex items-center justify-center shadow-lg transform rotate-12 scale-110 shadow-[#561485]/20">
-                      <ChevronRight className="h-6 w-6 text-white" />
+                      <button onClick={handleContinueToShopping}>
+                        <ChevronRight className="h-6 w-6 text-white" />
+                      </button>
                     </div>
                   )}
 

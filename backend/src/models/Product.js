@@ -34,6 +34,7 @@ const productSchema = new mongoose.Schema(
         "toys",
         "other",
         // Restaurant categories
+        "best_seller",
         "beverages",
         "dosa",
         "uttapam",
