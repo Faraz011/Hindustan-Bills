@@ -3,6 +3,13 @@ import User from "../models/User.js";
 import Order from "../models/Order.js";
 import asyncHandler from "express-async-handler";
 
+const generateSlug = (name) => {
+  return name
+    .toLowerCase()
+    .replace(/[^\w ]+/g, "")
+    .replace(/ +/g, "-");
+};
+
 
 export const getShopDetails = asyncHandler(async (req, res) => {
   console.log("getShopDetails called with user ID:", req.user.id);
@@ -59,7 +66,14 @@ export const updateShopDetails = asyncHandler(async (req, res) => {
   } else {
     console.log("Updating existing shop...");
     // Update existing shop
-    shop.name = name || shop.name;
+    if (name && name !== shop.name) {
+      shop.name = name;
+      shop.slug = generateSlug(name);
+    }
+    
+    if (!shop.slug && shop.name) {
+      shop.slug = generateSlug(shop.name);
+    }
     if (address) {
       shop.address.street = address.street || shop.address.street;
       shop.address.city = address.city || shop.address.city;
@@ -218,4 +232,18 @@ export const updateShopSettings = asyncHandler(async (req, res) => {
     message: "Settings updated successfully",
     metadata: shop.metadata
   });
+});
+
+// @desc    Get shop by slug
+// @route   GET /api/shop/s/:slug
+// @access  Public
+export const getShopBySlug = asyncHandler(async (req, res) => {
+  const { slug } = req.params;
+  const shop = await Shop.findOne({ slug }).select("name businessType address contact").lean();
+
+  if (!shop) {
+    return res.status(404).json({ message: "Shop not found" });
+  }
+
+  res.json(shop);
 });

@@ -8,6 +8,7 @@ import {
   getAvailableShops,
   getShopSettings,
   updateShopSettings,
+  getShopBySlug,
 } from "../controllers/shopController.js";
 
 const router = express.Router();
@@ -32,5 +33,8 @@ router.get("/orders", protect, getOrders);
 
 // Available shops for customers
 router.get("/available", protect, getAvailableShops);
+
+// Get shop by slug (Semi-public route)
+router.get("/s/:slug", getShopBySlug);
 
 export default router;

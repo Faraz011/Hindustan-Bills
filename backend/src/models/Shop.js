@@ -8,6 +8,13 @@ const shopSchema = new mongoose.Schema(
       required: [true, "Shop name is required"],
       trim: true,
     },
+    slug: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+      lowercase: true,
+    },
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
