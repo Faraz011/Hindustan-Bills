@@ -34,6 +34,11 @@ export default {
           700: '#2a3287',
           800: '#21276d',
           900: '#171c53',
+        },
+        accent: {
+          DEFAULT: '#A13266',
+          dark: '#8a2b57',
+          light: '#b94d7d'
         }
       },
       animation: {
