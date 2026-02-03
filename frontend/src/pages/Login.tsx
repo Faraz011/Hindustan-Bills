@@ -112,6 +112,47 @@ const Login = () => {
       setIsLoading(false);
     }
   };
+
+  const handleGuestLogin = async () => {
+    setIsLoading(true);
+    try {
+      const storedGuestId = localStorage.getItem("hb_guest_id");
+      const response = await api.post<AuthResponse & { guestId: string }>(
+        "/api/auth/guest-login",
+        { guestId: storedGuestId }
+      );
+      const { token, guestId } = response as any;
+
+      if (!token) {
+        throw new Error("No token received");
+      }
+
+      localStorage.setItem("hb_token", token);
+      if (guestId) {
+        localStorage.setItem("hb_guest_id", guestId);
+      }
+      const decodedToken = jwtDecode<JwtPayload>(token);
+
+      const userData = {
+        id: decodedToken.id,
+        role: decodedToken.role,
+        name: (decodedToken as any).name,
+        email: (decodedToken as any).email,
+      };
+
+      localStorage.setItem("user", JSON.stringify(userData));
+      toast.success("Logged in as Guest!");
+      navigate("/customer/dashboard", { replace: true });
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || err.message || "Guest login failed";
+      toast.error(errorMessage);
+      console.error("Guest login error:", errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 relative overflow-hidden">
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
@@ -181,6 +222,18 @@ const Login = () => {
                   or continue with email
                 </span>
               </div>
+            </div>
+
+            {/* Guest Login Section */}
+            <div className="mb-6">
+              <button
+                onClick={handleGuestLogin}
+                disabled={isLoading}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gray-900 border border-gray-900 rounded-lg text-white font-medium hover:bg-gray-800 transition-colors"
+              >
+                <User className="w-5 h-5" />
+                Login as Guest
+              </button>
             </div>
 
             {/* Email and Password Form */}

@@ -139,6 +139,15 @@ export const register = async (data: {
   return api.post("/api/auth/register", data);
 };
 
+export const guestLogin = async (guestId?: string | null) => {
+  return api.post("/api/auth/guest-login", { guestId });
+};
+
+export const getShopBySlug = async (slug: string): Promise<Shop> => {
+  const res = await api.get(`/api/shop/s/${slug}`);
+  return res as unknown as Shop;
+};
+
 
 export const getShopDetails = async (): Promise<Shop> => {
   const res = await api.get("/api/shop/details");
