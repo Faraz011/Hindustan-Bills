@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
+import crypto from "crypto";
 
 import User from "../models/User.js";
 import Shop from "../models/Shop.js";
@@ -226,6 +227,63 @@ export const updateProfile = async (req, res) => {
     );
 
     res.json({ message: "Profile updated successfully", user, token });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// GUEST LOGIN
+export const guestLogin = async (req, res) => {
+  try {
+    let { guestId } = req.body;
+    let user;
+
+    if (guestId) {
+      // Try to find existing guest user
+      const email = `guest_${guestId}@hb.com`;
+      user = await User.findOne({ email });
+    }
+
+    if (!user) {
+      // Create a new guest user if not found or not provided
+      guestId = crypto.randomBytes(4).toString("hex");
+      const email = `guest_${guestId}@hb.com`;
+      const name = `Guest ${guestId}`;
+
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(
+        crypto.randomBytes(20).toString("hex"),
+        salt
+      );
+
+      user = await User.create({
+        name,
+        email,
+        password: hashedPassword,
+        role: "customer",
+        profileCompleted: true,
+      });
+    }
+
+    // Create JWT token
+    const token = jwt.sign(
+      {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profileCompleted: user.profileCompleted,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.status(user.isNew ? 201 : 200).json({
+      message: user.isNew ? "Guest account created" : "Guest login successful",
+      token,
+      userId: user._id,
+      guestId, // Return the guestId for frontend to store
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
