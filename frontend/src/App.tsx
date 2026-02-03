@@ -30,6 +30,7 @@ import UpiPaymentPage from "./pages/customer/dashboard/pages/UpiPayment";
 import History from "./pages/History";
 import Receipt from "./pages/Receipt";
 import Checkout from "./pages/Checkout";
+import ShopRedirect from "./pages/customer/dashboard/pages/ShopRedirect";
 
 const dummyCart = [
   {
@@ -64,6 +65,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/s/:slug" element={<ShopRedirect />} />
           <Route path="/auth/google/callback" element={<SetupProfile />} />
           <Route path="/complete-setup" element={<SetupProfile />} />
           <Route path="/products" element={<Products />} />
