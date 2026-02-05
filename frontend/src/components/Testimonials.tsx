@@ -6,71 +6,64 @@ const Testimonials = () => {
     {
       name: "Rajesh Kumar",
       role: "Manager, Supermart",
-      avatar: "RK",
-      rating: 5,
-      text: "Hindustan Bills has transformed our checkout process, making it faster and more efficient for our customers. The instant digital receipts are a game changer!"
+      initials: "RK",
+      text: "The checkout speed has improved by 40% since we switched. It's exactly the infrastructure upgrade we needed.",
     },
     {
       name: "Priya Sharma",
-      role: "Store Owner, QuickMart",
-      avatar: "PS",
-      rating: 5,
-      text: "The QR-based system has reduced our checkout time by 70%. Customers love the convenience and we love the efficiency!"
+      role: "Owner, QuickMart",
+      initials: "PS",
+      text: "Digital receipts are a hit with our customers. The dashboard gives me clarity on my daily sales instantly.",
     },
     {
       name: "Amit Patel",
-      role: "CEO, Retail Chain",
-      avatar: "AP",
-      rating: 5,
-      text: "Implementing Hindustan Bills was the best decision for our business. The dashboard provides excellent insights into our sales performance."
+      role: "Director, Retail Chain",
+      initials: "AP",
+      text: "Robust, reliable, and zero downtime. This is enterprise-grade billing for modern Indian retail.",
     }
   ]
 
   return (
-    <section className="section-padding bg-white">
+    <section className="py-24 bg-white border-t border-gray-100">
       <div className="container-custom">
         <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
+           initial={{ opacity: 0, y: 20 }}
+           whileInView={{ opacity: 1, y: 0 }}
+           transition={{ duration: 0.6 }}
+           viewport={{ once: true }}
+           className="text-center mb-16"
         >
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-            What Our Users Say
+          <span className="text-accent font-bold tracking-wide uppercase text-sm mb-3 block">Customer Stories</span>
+          <h2 className="text-4xl font-bold text-gray-900 mb-6">
+            Trusted by modern <span className="text-primary-600">Retailers</span>
           </h2>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Hear from our businesses that have transformed their checkout experience.
-          </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-3 gap-8">
           {testimonials.map((testimonial, index) => (
             <motion.div
               key={index}
-              initial={{ opacity: 0, y: 50 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: index * 0.2 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
               viewport={{ once: true }}
-              className="bg-gray-50 rounded-2xl p-8 card-hover"
+              className="p-8 bg-gray-50 rounded-2xl border border-gray-100 hover:shadow-lg transition-all"
             >
-              <div className="flex items-center mb-4">
-                {[...Array(testimonial.rating)].map((_, i) => (
-                  <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
-                ))}
+              <div className="flex gap-1 mb-6">
+                 {[...Array(5)].map((_, i) => (
+                   <Star key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                 ))}
               </div>
               
-              <blockquote className="text-gray-700 italic mb-6 leading-relaxed">
-                "{testimonial.text}"
-              </blockquote>
+              <p className="text-gray-600 mb-8 leading-relaxed">"{testimonial.text}"</p>
               
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-primary-500 text-white rounded-full flex items-center justify-center font-semibold mr-4">
-                  {testimonial.avatar}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center font-bold text-sm">
+                  {testimonial.initials}
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900">{testimonial.name}</h4>
-                  <p className="text-sm text-gray-600">{testimonial.role}</p>
+                   <div className="font-bold text-gray-900 text-sm">{testimonial.name}</div>
+                   <div className="text-gray-500 text-xs">{testimonial.role}</div>
                 </div>
               </div>
             </motion.div>

@@ -1,28 +1,26 @@
+import { CreditCard, Smartphone, Landmark, Wallet } from 'lucide-react'
+
 export default function PaymentOptions() {
   const paymentMethods = [
-    { name: "Credit / Debit Card", icon: "💳" },
-    { name: "UPI (PhonePe, GPay, Paytm)", icon: "📱" },
-    { name: "Net Banking", icon: "🏦" },
-    { name: "Cash on Delivery", icon: "💵" },
-    { name: "Wallets (Amazon Pay, PayZapp)", icon: "👜" },
-    { name: "EMI / Pay Later", icon: "⌛" },
+    { name: "Cards", icon: CreditCard, color: "text-blue-500" },
+    { name: "UPI", icon: Smartphone, color: "text-green-500" },
+    { name: "NetBanking", icon: Landmark, color: "text-purple-500" },
+    { name: "Wallets", icon: Wallet, color: "text-orange-500" },
   ];
 
   return (
-    <section id="payment-options" className="bg-white py-16 px-6">
-      <h2 className="text-3xl font-bold text-center text-gray-800 mb-10">
-        Supported Payment Modes
-      </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-        {paymentMethods.map((method) => (
-          <div
-            key={method.name}
-            className="flex items-center justify-center border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg transition duration-300 bg-gray-50 hover:bg-gray-100"
-          >
-            <span className="text-3xl mr-3">{method.icon}</span>
-            <span className="font-medium text-gray-700">{method.name}</span>
-          </div>
-        ))}
+    <section className="py-24 bg-white border-t border-gray-100">
+      <div className="container-custom text-center">
+        <p className="text-gray-500 font-medium mb-12">Powering payments for India's best businesses</p>
+        
+        <div className="flex flex-wrap justify-center gap-8 md:gap-16 opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
+          {paymentMethods.map((method, index) => (
+             <div key={index} className="flex items-center gap-2 group cursor-default">
+               <method.icon className={`w-8 h-8 ${method.color}`} />
+               <span className="text-xl font-bold text-gray-800">{method.name}</span>
+             </div>
+          ))}
+        </div>
       </div>
     </section>
   );
