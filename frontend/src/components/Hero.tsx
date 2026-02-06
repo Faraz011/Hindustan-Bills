@@ -38,18 +38,16 @@ const Hero = () => {
             </motion.div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl text-gray-900 mb-6 leading-[1.1] font-bold tracking-tight">
-              Checkout in{" "}
+               Billing Stack for<br />
               <span className="relative inline-block">
-                <span className="relative z-10 text-[#561485]">10 seconds</span>
+                <span className="relative z-10 text-[#561485]">modern India</span>
                 <span className="absolute bottom-2 left-0 w-full h-3 bg-[#A13266]/20 -rotate-1" />
               </span>
-              .<br />
-              Not 5 minutes.
             </h1>
 
             <p className="text-lg sm:text-xl text-gray-600 mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium">
               Billing infrastructure and Scan & Go checkout for cafés, retail, and restaurants – 
-              GST-compliant, offline-first, and AI-powered to grow revenue and margins.
+              GST-compliant, UPI-first, and AI-powered to grow revenue and margins.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
