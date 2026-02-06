@@ -49,7 +49,7 @@ const FramesSection = () => {
           <h2 className="text-3xl sm:text-4xl lg:text-5xl text-gray-900 mb-4 font-bold">
             One platform.{" "}
             <span className="relative inline-block">
-              <span className="relative z-10 text-[#3C47BA]">Three powerful views.</span>
+              <span className="relative z-10 text-[#561485]">Three powerful views.</span>
               <span className="absolute bottom-1 left-0 w-full h-3 bg-[#3C47BA]/10" />
             </span>
           </h2>
