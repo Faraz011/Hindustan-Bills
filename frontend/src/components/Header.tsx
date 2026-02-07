@@ -80,7 +80,7 @@ const Header = () => {
               Sign In
             </Link>
             <Link 
-              to="/register"
+              to="/login"
               className="px-6 py-3 bg-gradient-to-r from-[#561485] to-[#A13266] text-white text-[10px] rounded-xl font-black uppercase tracking-[0.15em] shadow-lg shadow-[#561485]/20 hover:shadow-xl hover:shadow-[#561485]/30 transition-all hover:translate-y-[-2px] active:scale-95"
             >
               Start Free Trial

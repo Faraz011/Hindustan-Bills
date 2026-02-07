@@ -52,7 +52,7 @@ const Hero = () => {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <Link
-                to="/register"
+                to="/login"
                 className="group px-8 py-4 bg-gradient-to-r from-[#561485] to-[#A13266] text-white rounded-xl font-semibold flex items-center justify-center gap-2 shadow-lg shadow-[#561485]/25 hover:shadow-xl hover:shadow-[#561485]/30 transition-all hover:scale-105 active:scale-95"
               >
                 Start Free Trial
