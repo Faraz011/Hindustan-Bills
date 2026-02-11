@@ -58,7 +58,11 @@ const productSchema = new mongoose.Schema(
         "indian_veg",
         "indian_non-veg",
         "tandoor",
-        "combo"
+        "combo",
+        "maggie",
+        "omlet",
+        "chowmein",
+        "momo"
       ],
     },
     stock: {
