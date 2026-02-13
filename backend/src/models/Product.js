@@ -62,7 +62,19 @@ const productSchema = new mongoose.Schema(
         "maggie",
         "omlet",
         "chowmein",
-        "momo"
+        "momo",
+        "coffee",
+        "non_coffee",
+        "boba_tea",
+        "fish_fingers",
+        "fried_chicken",
+        "korean_range",
+        "sandwich",
+        "fries",
+        "pizza-8",
+        "waffle",
+        "cheesecake",
+        "brownie's"
       ],
     },
     stock: {
