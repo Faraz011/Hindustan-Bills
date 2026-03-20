@@ -2,15 +2,15 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
-import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, UserPlus } from "lucide-react";
 import toast from "react-hot-toast";
 import { jwtDecode } from "jwt-decode";
 import api from "../api/axios";
+import { guestLogin } from "../lib/api";
 
 interface JwtPayload {
   id: string;
   role: string;
-  profileCompleted: boolean;
   exp: number;
   iat: number;
 }
@@ -55,35 +55,61 @@ const Login = () => {
     window.location.href = `${VITE_API_URL}/api/auth/google`;
   };
 
+  const handleGuestLogin = async () => {
+    setIsLoading(true);
+    try {
+      const storedGuestId = localStorage.getItem("hb_guest_id");
+      const res: any = await guestLogin(storedGuestId);
+
+      const { token, guestId } = res;
+
+      if (!token) {
+        throw new Error("No token received from guest login");
+      }
+
+      localStorage.setItem("hb_token", token);
+      if (guestId) {
+        localStorage.setItem("hb_guest_id", guestId);
+      }
+
+      const decodedToken = jwtDecode<JwtPayload>(token);
+      const userData = {
+        id: decodedToken.id,
+        role: decodedToken.role,
+        name: (decodedToken as any).name || "Guest User",
+        email: (decodedToken as any).email || "",
+      };
+
+      localStorage.setItem("user", JSON.stringify(userData));
+      toast.success("Logged in as guest!");
+
+      navigate("/customer/dashboard", { replace: true });
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || err.message || "Guest login failed";
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
     const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
 
     try {
-      // Build payload: backend expects `name` for registration
-      const payload = isLogin
-        ? data
-        : {
-            ...data,
-            name: `${data.firstName || ""} ${data.lastName || ""}`.trim(),
-          };
-
-     
-      const authRes = await api.post<AuthResponse>(endpoint, payload);
+      const authRes = await api.post<AuthResponse>(endpoint, data);
       const { token } = authRes as any;
 
       if (!token) {
         throw new Error("No token received");
       }
 
-      
       localStorage.setItem("hb_token", token);
 
-      
       const decodedToken = jwtDecode<JwtPayload>(token);
       console.log("Decoded token:", decodedToken);
 
-     
       const userData = {
         id: decodedToken.id,
         role: decodedToken.role,
@@ -94,12 +120,10 @@ const Login = () => {
       localStorage.setItem("user", JSON.stringify(userData));
       toast.success(isLogin ? "Login successful!" : "Registration successful!");
 
-      
-      const redirectPath = !decodedToken.profileCompleted
-        ? "/complete-setup"
-        : decodedToken.role === "retailer"
-        ? "/retailer/dashboard"
-        : "/customer/dashboard";
+      const redirectPath =
+        decodedToken.role === "retailer"
+          ? "/retailer/dashboard"
+          : "/customer/dashboard";
 
       console.log("Redirecting to:", redirectPath);
       navigate(redirectPath, { replace: true });
@@ -112,47 +136,6 @@ const Login = () => {
       setIsLoading(false);
     }
   };
-
-  const handleGuestLogin = async () => {
-    setIsLoading(true);
-    try {
-      const storedGuestId = localStorage.getItem("hb_guest_id");
-      const response = await api.post<AuthResponse & { guestId: string }>(
-        "/api/auth/guest-login",
-        { guestId: storedGuestId }
-      );
-      const { token, guestId } = response as any;
-
-      if (!token) {
-        throw new Error("No token received");
-      }
-
-      localStorage.setItem("hb_token", token);
-      if (guestId) {
-        localStorage.setItem("hb_guest_id", guestId);
-      }
-      const decodedToken = jwtDecode<JwtPayload>(token);
-
-      const userData = {
-        id: decodedToken.id,
-        role: decodedToken.role,
-        name: (decodedToken as any).name,
-        email: (decodedToken as any).email,
-      };
-
-      localStorage.setItem("user", JSON.stringify(userData));
-      toast.success("Logged in as Guest!");
-      navigate("/customer/dashboard", { replace: true });
-    } catch (err: any) {
-      const errorMessage =
-        err.response?.data?.message || err.message || "Guest login failed";
-      toast.error(errorMessage);
-      console.error("Guest login error:", errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 relative overflow-hidden">
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
@@ -224,17 +207,15 @@ const Login = () => {
               </div>
             </div>
 
-            {/* Guest Login Section */}
-            <div className="mb-6">
-              <button
-                onClick={handleGuestLogin}
-                disabled={isLoading}
-                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gray-900 border border-gray-900 rounded-lg text-white font-medium hover:bg-gray-800 transition-colors"
-              >
-                <User className="w-5 h-5" />
-                Login as Guest
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleGuestLogin}
+              disabled={isLoading}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#0F172A] text-white rounded-lg font-medium hover:bg-[#1E293B] transition-colors mb-6"
+            >
+              <UserPlus className="h-5 w-5" />
+              Login as Guest
+            </button>
 
             {/* Email and Password Form */}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
